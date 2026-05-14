@@ -1,0 +1,11 @@
+﻿using UserService.Models;
+
+namespace UserService.Repositories.Interfaces
+{
+    public interface IUserRepository
+    {
+        Task<User> GetByUsernameAsync(string username);
+        Task AddUserAsync(User user);
+        Task<User> GetByEmailAsync(string email);
+    }
+}

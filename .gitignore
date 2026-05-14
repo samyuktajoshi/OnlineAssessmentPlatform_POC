@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+
+# Visual Studio
+.vs/
+
+# React
+node_modules/
+build/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Secrets
+appsettings.Development.json
+.env
