@@ -7,5 +7,7 @@ namespace UserService.Repositories.Interfaces
         Task<User> GetByUsernameAsync(string username);
         Task AddUserAsync(User user);
         Task<User> GetByEmailAsync(string email);
+        Task<User?> GetByUsernameOrEmailAsync(string value);
+
     }
 }

@@ -11,7 +11,7 @@ namespace AssessmentService.Data
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<AssessmentQuestion> AssessmentQuestions { get; set; }
-
+        public DbSet<TestCase> TestCases { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Composite Key
@@ -29,6 +29,13 @@ namespace AssessmentService.Data
                 .HasOne(aq => aq.Question)
                 .WithMany(q => q.AssessmentQuestions)
                 .HasForeignKey(aq => aq.QuestionId);
+            // ✅ Question → TestCases (one to many)
+            modelBuilder.Entity<TestCase>()
+                .HasOne(tc => tc.Question)
+                .WithMany(q => q.TestCases)
+                .HasForeignKey(tc => tc.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

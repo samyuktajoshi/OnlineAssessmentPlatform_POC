@@ -36,6 +36,7 @@ namespace AssessmentService.Repositories
                 .AsNoTracking()
                 .Include(a => a.AssessmentQuestions)
                 .ThenInclude(aq => aq.Question)
+                .ThenInclude(q => q.TestCases)
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
 

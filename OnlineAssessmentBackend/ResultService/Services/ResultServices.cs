@@ -5,6 +5,7 @@ using ResultService.Services.Interfaces;
 using ResultService.Exceptions;
 using System.Security.Claims;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace ResultService.Services
 {
@@ -24,62 +25,174 @@ namespace ResultService.Services
             _logger = logger;
         }
 
+        private string Normalize(string str)
+        {
+            return (str ?? "")
+                .Replace("\r", "")
+                .Replace("\n", "")
+                .Trim()
+                .ToLower();
+        }
+
+        /* ================== CALCULATING RESULT ================== */
         public async Task<ResultResponseDto> CalculateAsync(int submissionId, ClaimsPrincipal user)
         {
-            var existingResult = await _repo.GetBySubmissionIdAsync(submissionId);
+            _logger.LogInformation("Starting result calculation for {SubmissionId}", submissionId);
 
-            if (existingResult != null)
-            {
-                throw new BadRequestException(
-                    "Result already exists for this submission"
-                );
-            }
             if (submissionId <= 0)
                 throw new BadRequestException("Invalid submission id");
 
-            var claim = user.FindFirst(ClaimTypes.NameIdentifier)
-                ?? throw new UnauthorizedAccessException("Invalid token");
+            var existing = await _repo.GetBySubmissionIdAsync(submissionId);
+            if (existing != null)
+                throw new BadRequestException("Result already exists");
+
+            var claim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim == null)
+                throw new UnauthorizedAccessException("Invalid token");
 
             var userId = int.Parse(claim.Value);
             var userName = user.FindFirst(ClaimTypes.Name)?.Value ?? "User";
 
-            _logger.LogInformation("Calculating result for Submission {Id}", submissionId);
-
-            // 🔥 FETCH SUBMISSION
+            // Fetch submission
             var submission = await _http.GetFromJsonAsync<SubmissionDto>(
-                $"https://localhost:7049/api/submissions/{submissionId}"
-            ) ?? throw new NotFoundException("Submission not found");
+                $"https://localhost:7049/api/submissions/{submissionId}")
+                ?? throw new NotFoundException("Submission not found");
 
-            // 🔥 FETCH QUESTIONS
+            _logger.LogInformation("Answers count: {Count}", submission.Answers?.Count ?? 0);
+
+            // Fetch questions
             var questions = await _http.GetFromJsonAsync<List<QuestionDto>>(
-                $"https://localhost:7219/api/questions/assessment/{submission.AssessmentId}"
-            ) ?? throw new NotFoundException("Questions not found");
+                $"https://localhost:7219/api/questions/assessment/{submission.AssessmentId}")
+                ?? throw new NotFoundException("Questions not found");
 
             int score = 0;
 
+            /* ================== SCORING ================== */
             foreach (var q in questions)
             {
-                var userAns = submission.Answers
+                var userAns = submission.Answers?
                     .FirstOrDefault(a => a.QuestionId == q.Id);
 
-                if (userAns == null) continue;
-
-                var userAnswers = userAns.SelectedAnswers?
-                    .Split(',').Select(x => x.Trim().ToUpper()).OrderBy(x => x).ToList();
-
-                var correctAnswers = q.CorrectAnswers?
-                    .Split(',').Select(x => x.Trim().ToUpper()).OrderBy(x => x).ToList();
-
-                if (userAnswers != null &&
-                    correctAnswers != null &&
-                    userAnswers.SequenceEqual(correctAnswers))
+                if (userAns == null)
                 {
-                    score++;
+                    _logger.LogWarning("No answer for Question {Qid}", q.Id);
+                    continue;
+                }
+
+                // ── CODING QUESTIONS ──
+                if (q.Type == 4)
+                {
+                    var userCode = userAns.SelectedAnswers;
+
+                    if (string.IsNullOrWhiteSpace(userCode))
+                    {
+                        _logger.LogWarning("No code provided for Q{Qid}", q.Id);
+                        continue;
+                    }
+
+                    var testCases = q.TestCases ?? new List<TestCaseDto>();
+                    int passed = 0;
+                    int total = testCases.Count;
+
+                    foreach (var tc in testCases)
+                    {
+                        try
+                        {
+                            var response = await _http.PostAsJsonAsync(
+                                "https://localhost:7219/api/code/run",
+                                new
+                                {
+                                    code = userCode,
+                                    input = tc.Input
+                                });
+
+                            if (!response.IsSuccessStatusCode)
+                            {
+                                _logger.LogWarning(
+                                    "Code runner returned {Status} for Q{Qid}",
+                                    response.StatusCode, q.Id);
+                                continue;
+                            }
+
+                            // ✅ Fix — use JsonElement instead of dynamic
+                            var json = await response.Content
+                                .ReadFromJsonAsync<JsonElement>();
+
+                            // safely extract "output" property
+                            string output = json.TryGetProperty("output", out var outputProp)
+                                ? outputProp.GetString() ?? ""
+                                : "";
+
+                            _logger.LogInformation(
+                                "Q{Qid} TC - Expected: [{Exp}] Actual: [{Act}]",
+                                q.Id, tc.ExpectedOutput, output);
+
+                            if (Normalize(output) == Normalize(tc.ExpectedOutput))
+                            {
+                                passed++;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(
+                                "Code execution failed for Q{Qid}: {Err}",
+                                q.Id, ex.Message);
+                        }
+                    }
+
+                    if (total > 0)
+                    {
+                        int marks = (5 * passed) / total; // partial scoring
+                        score += marks;
+
+                        _logger.LogInformation(
+                            "Coding Q{Qid}: Passed {Passed}/{Total} → Marks {Marks}",
+                            q.Id, passed, total, marks);
+                    }
+                }
+
+                // ── MCQ / TRUE FALSE ──
+                else
+                {
+                    var userAnswers = userAns.SelectedAnswers?
+                        .Split(',')
+                        .Select(x => x.Trim().ToUpper())
+                        .OrderBy(x => x)
+                        .ToList();
+
+                    var correctAnswers = q.CorrectAnswers?
+                        .Split(',')
+                        .Select(x => x.Trim().ToUpper())
+                        .OrderBy(x => x)
+                        .ToList();
+
+                    if (userAnswers != null &&
+                        correctAnswers != null &&
+                        userAnswers.SequenceEqual(correctAnswers))
+                    {
+                        score += 1;
+                        _logger.LogInformation("MCQ correct → +1 mark (Q{Qid})", q.Id);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("MCQ incorrect (Q{Qid})", q.Id);
+                    }
                 }
             }
 
-            var percentage = Math.Round((double)score / questions.Count * 100, 2);
+            /* ================== TOTAL MARKS ================== */
+            int totalMarks = questions.Sum(q => q.Type == 4 ? 5 : 1);
 
+            /* ================== PERCENTAGE ================== */
+            var percentage = totalMarks == 0
+                ? 0
+                : Math.Round((double)score / totalMarks * 100, 2);
+
+            _logger.LogInformation(
+                "Final → Score: {Score}, Total: {Total}, Percentage: {Percent}%",
+                score, totalMarks, percentage);
+
+            /* ================== SAVE RESULT ================== */
             var result = new Result
             {
                 SubmissionId = submissionId,
@@ -87,34 +200,34 @@ namespace ResultService.Services
                 UserName = userName,
                 AssessmentId = submission.AssessmentId,
                 Score = score,
-                TotalQuestions = questions.Count,
+                TotalQuestions = totalMarks,
                 Percentage = percentage,
                 CreatedAt = DateTime.UtcNow
             };
 
             await _repo.AddAsync(result);
+            _logger.LogInformation("Result saved for {SubmissionId}", submissionId);
 
             return new ResultResponseDto
             {
                 Score = score,
-                TotalQuestions = questions.Count,
+                TotalQuestions = totalMarks,
                 Percentage = percentage
             };
         }
 
-        public async Task<List<Result>> GetAllAsync() =>
-            await _repo.GetAllAsync();
-
+        /* ================== GET USER RESULTS ================== */
         public async Task<List<Result>> GetByUserIdAsync(ClaimsPrincipal user)
         {
-            var userId = int.Parse(
-                user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? throw new UnauthorizedAccessException("Invalid token")
-            );
+            var claim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim == null)
+                throw new UnauthorizedAccessException("Invalid token");
 
+            var userId = int.Parse(claim.Value);
             return await _repo.GetByUserIdAsync(userId);
         }
 
+        /* ================== ANALYTICS ================== */
         public async Task<object> GetAnalyticsAsync(int assessmentId)
         {
             var results = await _repo.GetByAssessmentIdAsync(assessmentId);
@@ -122,98 +235,155 @@ namespace ResultService.Services
             if (!results.Any())
                 throw new NotFoundException("No results found");
 
+            var distribution = new
+            {
+                Low = results.Count(r => r.Percentage < 40),
+                Medium = results.Count(r => r.Percentage >= 40 && r.Percentage < 70),
+                High = results.Count(r => r.Percentage >= 70)
+            };
+
+            var topper = results.OrderByDescending(r => r.Score).First();
+
             return new
             {
                 TotalAttempts = results.Count,
                 AverageScore = Math.Round(results.Average(r => r.Score), 2),
                 HighestScore = results.Max(r => r.Score),
                 PassPercentage = Math.Round(
-                    results.Count(r => r.Percentage >= 50) * 100.0 / results.Count, 2)
+                    results.Count(r => r.Percentage >= 50) * 100.0 / results.Count, 2),
+                ScoreDistribution = distribution,
+                Topper = new { topper.UserName, topper.Score }
             };
         }
 
-        public async Task<List<Result>> GetLeaderboardAsync(int assessmentId)
+        /* ================== LEADERBOARD ================== */
+        public async Task<List<LeaderboardDto>> GetLeaderboardAsync(int assessmentId)
         {
             var results = await _repo.GetByAssessmentIdAsync(assessmentId);
 
             return results
+                .GroupBy(r => r.UserId)
+                .Select(g => g
+                    .OrderByDescending(x => x.Score)
+                    .ThenBy(x => x.CreatedAt)
+                    .First())
                 .OrderByDescending(r => r.Score)
                 .ThenBy(r => r.CreatedAt)
+                .Select((r, index) => new LeaderboardDto
+                {
+                    Rank = index + 1,
+                    UserName = r.UserName,
+                    Score = r.Score
+                })
                 .Take(5)
                 .ToList();
         }
 
+        /* ================== USER ANALYTICS ================== */
         public async Task<object> GetMyAnalyticsAsync(ClaimsPrincipal user)
         {
-            var results = await GetByUserIdAsync(user);
+            var claim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim == null)
+                throw new UnauthorizedAccessException("Invalid token");
+
+            var userId = int.Parse(claim.Value);
+            var results = await _repo.GetByUserIdAsync(userId);
 
             if (!results.Any())
             {
-                return new { TotalTests = 0, AverageScore = 0, BestScore = 0, LatestScore = 0 };
+                return new
+                {
+                    TotalTests = 0,
+                    AverageScore = 0,
+                    BestScore = 0,
+                    LatestScore = 0,
+                    Improvement = 0
+                };
             }
+
+            var ordered = results.OrderBy(r => r.CreatedAt).ToList();
 
             return new
             {
                 TotalTests = results.Count,
                 AverageScore = Math.Round(results.Average(r => r.Score), 2),
                 BestScore = results.Max(r => r.Score),
-                LatestScore = results.OrderByDescending(r => r.CreatedAt).First().Score
+                LatestScore = ordered.Last().Score,
+                Improvement = ordered.Count > 1
+                    ? ordered.Last().Score - ordered.First().Score
+                    : 0
             };
         }
+
+        /* ================== OTHERS ================== */
+
+        public async Task<List<Result>> GetAllAsync() =>
+            await _repo.GetAllAsync();
+
         public async Task<Result> GetResultBySubmissionIdAsync(int submissionId)
         {
-            var result = await _repo.GetBySubmissionIdAsync(submissionId);
-
-            if (result == null)
-                throw new NotFoundException("Result not found");
-
-            return result;
+            return await _repo.GetBySubmissionIdAsync(submissionId)
+                ?? throw new NotFoundException("Result not found");
         }
+
         public async Task<ResultWithDetailsDto> GetDetailedResultAsync(int submissionId)
         {
-            // ✅ Get existing result
-            var result = await _repo.GetBySubmissionIdAsync(submissionId);
+            var result = await _repo.GetBySubmissionIdAsync(submissionId)
+                ?? throw new NotFoundException("Result not found");
 
-            if (result == null)
-                throw new NotFoundException("Result not found");
-
-            // ✅ Fetch submission
             var submission = await _http.GetFromJsonAsync<SubmissionDto>(
-                $"https://localhost:7049/api/submissions/{submissionId}"
-            ) ?? throw new NotFoundException("Submission not found");
+                $"https://localhost:7049/api/submissions/{submissionId}")
+                ?? throw new NotFoundException("Submission not found");
 
-            // ✅ Fetch questions
             var questions = await _http.GetFromJsonAsync<List<QuestionDto>>(
-                $"https://localhost:7219/api/questions/assessment/{submission.AssessmentId}"
-            ) ?? throw new NotFoundException("Questions not found");
+                $"https://localhost:7219/api/questions/assessment/{submission.AssessmentId}")
+                ?? throw new NotFoundException("Questions not found");
 
             var details = questions.Select(q =>
             {
-                var userAns = submission.Answers
+                var userAns = submission.Answers?
                     .FirstOrDefault(a => a.QuestionId == q.Id);
 
-                var userAnswerStr = userAns?.SelectedAnswers;
+                bool isCorrect = false;
 
-                var userAnswers = userAnswerStr?
-                    .Split(',').Select(x => x.Trim().ToUpper()).OrderBy(x => x);
+                if (userAns != null)
+                {
+                    if (q.Type == 4)
+                    {
+                        isCorrect = userAns.IsCorrect == true;
+                    }
+                    else
+                    {
+                        var userAnswers = userAns.SelectedAnswers?
+                            .Split(',')
+                            .Select(x => x.Trim().ToUpper())
+                            .OrderBy(x => x);
 
-                var correctAnswers = q.CorrectAnswers?
-                    .Split(',').Select(x => x.Trim().ToUpper()).OrderBy(x => x);
+                        var correctAnswers = q.CorrectAnswers?
+                            .Split(',')
+                            .Select(x => x.Trim().ToUpper())
+                            .OrderBy(x => x);
 
-                bool isCorrect = userAnswers != null &&
-                                 correctAnswers != null &&
-                                 userAnswers.SequenceEqual(correctAnswers);
+                        isCorrect = userAnswers != null &&
+                                    correctAnswers != null &&
+                                    userAnswers.SequenceEqual(correctAnswers);
+                    }
+                }
+
+                // For coding — show only visible test case expected outputs
+                var correctAnswer = q.Type == 4
+                    ? string.Join("\n", (q.TestCases ?? new List<TestCaseDto>())
+                        .Where(tc => !tc.IsHidden)
+                        .Select((tc, i) => $"Case {i + 1}: {tc.ExpectedOutput}"))
+                    : q.CorrectAnswers;
 
                 return new ResultDetailDto
                 {
                     QuestionId = q.Id,
                     QuestionText = q.Text,
-
-                    UserAnswer = userAnswerStr,
-                    CorrectAnswer = q.CorrectAnswers,
+                    UserAnswer = userAns?.SelectedAnswers,
+                    CorrectAnswer = correctAnswer,
                     IsCorrect = isCorrect,
-
-                    // ✅ ADD THIS (you probably missed this)
                     OptionA = q.OptionA,
                     OptionB = q.OptionB,
                     OptionC = q.OptionC,
@@ -226,10 +396,8 @@ namespace ResultService.Services
                 Score = result.Score,
                 TotalQuestions = result.TotalQuestions,
                 Percentage = result.Percentage,
-
                 Details = details
             };
         }
-
     }
 }

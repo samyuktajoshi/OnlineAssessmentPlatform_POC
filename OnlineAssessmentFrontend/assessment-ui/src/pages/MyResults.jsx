@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import resultApi from "../api/resultApi";
 import assessmentApi from "../api/assessmentApi";
 import { useNavigate } from "react-router-dom";
-import React from "react";import {
+
+import {
   Box,
   Typography,
   Stack,
@@ -10,29 +11,31 @@ import React from "react";import {
   Button,
   CircularProgress,
   Alert,
-  LinearProgress,
   Paper,
-  Avatar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 
-import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
-import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
-import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
+import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
+import NorthRoundedIcon from "@mui/icons-material/NorthRounded";
+import SouthRoundedIcon from "@mui/icons-material/SouthRounded";
+import SwapVertRoundedIcon from "@mui/icons-material/SwapVertRounded";
 
 function MyResults() {
   const navigate = useNavigate();
 
   const [results, setResults] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [map, setMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [analytics, setAnalytics] = useState(null);
   const [filter, setFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("date_desc"); // date_desc | date_asc | score_desc | score_asc
 
   const hasFetchedRef = useRef(false);
 
@@ -41,10 +44,6 @@ function MyResults() {
     hasFetchedRef.current = true;
     fetchAll();
   }, []);
-
-  useEffect(() => {
-    applyFilter(filter);
-  }, [filter, results]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -58,10 +57,7 @@ function MyResults() {
   const fetchResults = async () => {
     try {
       const res = await resultApi.get("/results/my");
-      const sorted = (res.data || []).sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-      setResults(sorted);
+      setResults(res.data || []);
     } catch {
       setError("Failed to load results.");
     }
@@ -75,20 +71,19 @@ function MyResults() {
         m[a.assessmentId] = a.assessmentName || a.title;
       });
       setMap(m);
-    } catch { }
+    } catch {}
   };
 
   const fetchAnalytics = async () => {
     try {
       const res = await resultApi.get("/results/my/analytics");
       setAnalytics(res.data);
-    } catch { }
+    } catch {}
   };
 
   const getPercentage = (score, total) =>
     total ? Math.round((score / total) * 100) : 0;
 
-  // ✅ FIXED — Excellent is a subset of Passed (both ≥50%)
   const getStatus = (score, total) => {
     const pct = getPercentage(score, total);
     if (pct >= 80) return "Excellent";
@@ -96,56 +91,42 @@ function MyResults() {
     return "Failed";
   };
 
-  const getScoreStyle = (score, total) => {
+  const getStatusStyle = (score, total) => {
     const pct = getPercentage(score, total);
-    if (pct >= 80) return {
-      color: "#166534",
-      bg: "#f0fdf4",
-      border: "#86efac",
-      track: "#16a34a",
-      chip: "success",
-    };
-    if (pct >= 50) return {
-      color: "#854d0e",
-      bg: "#fefce8",
-      border: "#fde047",
-      track: "#ca8a04",
-      chip: "warning",
-    };
-    return {
-      color: "#991b1b",
-      bg: "#fef2f2",
-      border: "#fca5a5",
-      track: "#dc2626",
-      chip: "error",
-    };
+    if (pct >= 80) return { color: "#166534", bg: "#dcfce7", chip: "success" };
+    if (pct >= 50) return { color: "#854d0e", bg: "#fef9c3", chip: "warning" };
+    return { color: "#991b1b", bg: "#fee2e2", chip: "error" };
   };
 
-  const applyFilter = (type) => {
-    if (type === "All") setFiltered(results);
-    else if (type === "Passed")
-      // ✅ Passed filter includes Excellent too
-      setFiltered(results.filter((r) => getPercentage(r.score, r.totalQuestions) >= 50));
-    else
-      setFiltered(results.filter((r) => getStatus(r.score, r.totalQuestions) === type));
-  };
+  // ── Compute filtered + sorted together so they never conflict ──
+  const displayRows = results
+    .filter((r) => {
+      const pct = getPercentage(r.score, r.totalQuestions);
+      if (filter === "All") return true;
+      if (filter === "Passed") return pct >= 50;
+      if (filter === "Excellent") return pct >= 80;
+      if (filter === "Failed") return pct < 50;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "date_desc") return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sortBy === "date_asc")  return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortBy === "score_desc") return getPercentage(b.score, b.totalQuestions) - getPercentage(a.score, a.totalQuestions);
+      if (sortBy === "score_asc")  return getPercentage(a.score, a.totalQuestions) - getPercentage(b.score, b.totalQuestions);
+      return 0;
+    });
 
-  const filterCounts = {
-    All: results.length,
-    Excellent: results.filter((r) => getPercentage(r.score, r.totalQuestions) >= 80).length,
-    // ✅ Passed count includes Excellent
-    Passed: results.filter((r) => getPercentage(r.score, r.totalQuestions) >= 50).length,
-    Failed: results.filter((r) => getPercentage(r.score, r.totalQuestions) < 50).length,
-  };
-
-  const getInitials = (name) =>
-    name ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "A";
+  const sortOptions = [
+    { key: "date_desc",  label: "Latest First",     icon: <SouthRoundedIcon sx={{ fontSize: 14 }} /> },
+    { key: "date_asc",   label: "Oldest First",      icon: <NorthRoundedIcon sx={{ fontSize: 14 }} /> },
+    { key: "score_desc", label: "Score: High → Low", icon: <SouthRoundedIcon sx={{ fontSize: 14 }} /> },
+    { key: "score_asc",  label: "Score: Low → High", icon: <NorthRoundedIcon sx={{ fontSize: 14 }} /> },
+  ];
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: "60vh", gap: 2 }}>
-        <CircularProgress size={40} />
-        <Typography color="text.secondary">Loading your results...</Typography>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <CircularProgress size={36} />
       </Box>
     );
   }
@@ -154,23 +135,23 @@ function MyResults() {
     <Box sx={{ backgroundColor: "#f0f2f8", minHeight: "100vh" }}>
 
       {/* Header */}
-      <Box sx={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", px: 4, py: 5, color: "white", mb: 4 }}>
+      <Box sx={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)", px: 4, py: 2, color: "white", mb: 4 }}>
         <Box maxWidth={900} mx="auto">
           <Button
             startIcon={<ArrowBackRoundedIcon />}
             onClick={() => navigate("/candidate-home")}
-            sx={{ color: "rgba(255,255,255,0.8)", textTransform: "none", mb: 2, borderRadius: 2, "&:hover": { bgcolor: "rgba(255,255,255,0.1)", color: "white" } }}
+            sx={{ color: "rgba(255,255,255,0.8)", textTransform: "none", mb: 2, borderRadius: 2, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
           >
-            Back to Dashboard
+            Back
           </Button>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Box sx={{ width: 56, height: 56, borderRadius: 2.5, bgcolor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.2)" }}>
-              <EmojiEventsRoundedIcon sx={{ fontSize: 30, color: "white" }} />
+            <Box sx={{ width: 50, height: 50, borderRadius: 1, bgcolor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <EmojiEventsRoundedIcon sx={{ fontSize: 28, color: "white" }} />
             </Box>
             <Box>
               <Typography variant="h4" fontWeight={700}>My Results</Typography>
-              <Typography sx={{ opacity: 0.75, mt: 0.5, fontSize: 14 }}>
-                {results.length} submission{results.length !== 1 ? "s" : ""} total
+              <Typography sx={{ opacity: 0.75, fontSize: 14 }}>
+                {results.length} submission{results.length !== 1 ? "s" : ""}
               </Typography>
             </Box>
           </Box>
@@ -181,215 +162,169 @@ function MyResults() {
 
         {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-        {/* Analytics cards */}
+        {/* Analytics */}
         {analytics && (
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 2, mb: 4 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, mb: 4 }}>
             {[
-              { key: "totalTests", label: "Total Tests", icon: <AssignmentRoundedIcon />, color: "#1e3c72" },
-              { key: "averageScore", label: "Average Score", icon: <TrendingUpRoundedIcon />, color: "#d97706" },
-              { key: "bestScore", label: "Best Score", icon: <EmojiEventsRoundedIcon />, color: "#7c3aed" },
-              { key: "latestScore", label: "Latest Score", icon: <StarRoundedIcon />, color: "#16a34a" },
+              { label: "Tests Taken", value: analytics.totalTests },
+              { label: "Avg Score",   value: analytics.averageScore },
+              { label: "Best Score",  value: analytics.bestScore },
+              { label: "Latest",      value: analytics.latestScore },
             ].map((s) => (
-              <Paper
-                key={s.key}
-                elevation={0}
-                sx={{ borderRadius: 3, border: "1px solid #e0e7ff", p: 2.5, bgcolor: "white", transition: "all 0.2s", "&:hover": { transform: "translateY(-2px)", boxShadow: "0 6px 20px rgba(30,60,114,0.1)" } }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: `${s.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {React.cloneElement(s.icon, { sx: { fontSize: 20, color: s.color } })}
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={500} display="block">
-                      {s.label}
-                    </Typography>
-                    <Typography variant="h5" fontWeight={800} color={s.color} lineHeight={1.1}>
-                      {analytics[s.key] ?? "—"}
-                    </Typography>
-                  </Box>
-                </Box>
+              <Paper key={s.label} elevation={0} sx={{ borderRadius: 2, border: "1px solid #e0e7ff", p: 2, textAlign: "center", bgcolor: "white" }}>
+                <Typography variant="h5" fontWeight={800} color="#1e3c72">{s.value ?? "—"}</Typography>
+                <Typography variant="caption" color="text.secondary">{s.label}</Typography>
               </Paper>
             ))}
           </Box>
         )}
 
-        {/* Filter chips */}
-        <Stack direction="row" spacing={1} mb={3} flexWrap="wrap">
-          {[
-            { key: "All", label: "All" },
-            { key: "Excellent", label: "Excellent ≥80%" },
-            { key: "Passed", label: "Passed ≥50%" },
-            { key: "Failed", label: "Failed <50%" },
-          ].map((f) => (
-            <Chip
-              key={f.key}
-              label={`${f.label} · ${filterCounts[f.key]}`}
-              clickable
-              onClick={() => setFilter(f.key)}
-              sx={{
-                fontWeight: 600,
-                fontSize: 12,
-                height: 30,
-                bgcolor: filter === f.key ? "#1e3c72" : "white",
-                color: filter === f.key ? "white" : "text.secondary",
-                border: "1px solid",
-                borderColor: filter === f.key ? "#1e3c72" : "#e0e7ff",
-                "&:hover": { bgcolor: filter === f.key ? "#1e3c72" : "#f0f2f8" },
-              }}
-            />
-          ))}
-        </Stack>
+        {/* Filter + Sort row */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
 
-        {/* ✅ Note explaining Passed includes Excellent */}
-        <Typography variant="caption" color="text.secondary" display="block" mb={2}>
-          * "Passed" filter includes Excellent scores. Excellent = ≥80%, Passed = ≥50%, Failed = &lt;50%.
+          {/* Filter chips */}
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            {["All", "Excellent", "Passed", "Failed"].map((f) => (
+              <Chip
+                key={f}
+                label={f}
+                clickable
+                onClick={() => setFilter(f)}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  bgcolor: filter === f ? "#1e3c72" : "white",
+                  color: filter === f ? "white" : "text.secondary",
+                  border: "1px solid",
+                  borderColor: filter === f ? "#1e3c72" : "#e0e7ff",
+                  "&:hover": { bgcolor: filter === f ? "#1e3c72" : "#f0f2f8" },
+                }}
+              />
+            ))}
+          </Stack>
+
+          {/* Sort chips */}
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            {sortOptions.map((s) => (
+              <Chip
+                key={s.key}
+                label={s.label}
+                clickable
+                icon={sortBy === s.key ? s.icon : <SwapVertRoundedIcon sx={{ fontSize: 14 }} />}
+                onClick={() => setSortBy(s.key)}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: 11,
+                  bgcolor: sortBy === s.key ? "#eef2ff" : "white",
+                  color: sortBy === s.key ? "#1e3c72" : "text.secondary",
+                  border: "1px solid",
+                  borderColor: sortBy === s.key ? "#2a5298" : "#e0e7ff",
+                  "&:hover": { bgcolor: "#eef2ff" },
+                  "& .MuiChip-icon": {
+                    color: sortBy === s.key ? "#1e3c72" : "#94a3b8",
+                  },
+                }}
+              />
+            ))}
+          </Stack>
+        </Box>
+
+        {/* Result count */}
+        <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
+          Showing {displayRows.length} of {results.length} result{results.length !== 1 ? "s" : ""}
+          {filter !== "All" && ` · filtered by "${filter}"`}
+          {" · "}{sortOptions.find(s => s.key === sortBy)?.label}
         </Typography>
 
-        {/* Results */}
-        {filtered.length === 0 ? (
-          <Paper variant="outlined" sx={{ borderRadius: 3, textAlign: "center", py: 8, border: "2px dashed #c5cae9" }}>
-            <AssignmentRoundedIcon sx={{ fontSize: 52, color: "#c5cae9", mb: 2 }} />
-            <Typography color="text.secondary" mb={2}>
-              {filter === "All" ? "No results yet." : `No "${filter}" results.`}
-            </Typography>
-            {filter !== "All"
-              ? <Button size="small" sx={{ textTransform: "none" }} onClick={() => setFilter("All")}>Show all</Button>
-              : <Button variant="contained" onClick={() => navigate("/assessments")} sx={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)", borderRadius: 2, textTransform: "none", fontWeight: 600 }}>Take an Assessment</Button>
-            }
+        {/* Table */}
+        {displayRows.length === 0 ? (
+          <Paper variant="outlined" sx={{ borderRadius: 3, textAlign: "center", py: 6, border: "2px dashed #c5cae9" }}>
+            <Typography color="text.secondary" mb={1}>No results match this filter.</Typography>
+            <Button size="small" sx={{ textTransform: "none" }} onClick={() => setFilter("All")}>
+              Clear filter
+            </Button>
           </Paper>
         ) : (
-          <Stack spacing={2}>
-            {filtered.map((r, index) => {
-              const pct = getPercentage(r.score, r.totalQuestions);
-              const style = getScoreStyle(r.score, r.totalQuestions);
-              const label = getStatus(r.score, r.totalQuestions);
-              const assessmentName = map[r.assessmentId] || "Assessment";
+          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 3, border: "1px solid #e0e7ff", overflow: "hidden" }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#f8f9ff" }}>
+                  <TableCell sx={{ fontWeight: 700, color: "#1e3c72", fontSize: 13, py: 1.5 }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#1e3c72", fontSize: 13, py: 1.5 }}>Assessment</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#1e3c72", fontSize: 13, py: 1.5 }} align="center">Score</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#1e3c72", fontSize: 13, py: 1.5 }} align="center">Percentage</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#1e3c72", fontSize: 13, py: 1.5 }} align="center">Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#1e3c72", fontSize: 13, py: 1.5 }} align="right">Date </TableCell>
+                </TableRow>
+              </TableHead>
 
-              return (
-                <Paper
-                  key={r.id ?? index}
-                  elevation={0}
-                  sx={{
-                    borderRadius: 3,
-                    border: "1px solid #e0e7ff",
-                    bgcolor: "white",
-                    overflow: "hidden",
-                    transition: "all 0.2s",
-                    "&:hover": { boxShadow: "0 6px 20px rgba(30,60,114,0.1)", transform: "translateY(-1px)" },
-                  }}
-                >
-                  <Box sx={{ display: "flex" }}>
+              <TableBody>
+                {displayRows.map((r, index) => {
+                  const pct = getPercentage(r.score || 0, r.totalQuestions || 1);
+                  const label = getStatus(r.score, r.totalQuestions);
+                  const style = getStatusStyle(r.score, r.totalQuestions);
+                  const name = map[r.assessmentId] || "Assessment";
+                  const isLatest = sortBy === "date_desc" && index === 0;
 
-                    {/* Score sidebar */}
-                    <Box
+                  return (
+                    <TableRow
+                      key={r.id || index}
                       sx={{
-                        width: 90,
-                        flexShrink: 0,
-                        bgcolor: style.bg,
-                        borderRight: `1px solid ${style.border}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        py: 3,
-                        px: 1,
+                        bgcolor: isLatest ? "#fafbff" : "white",
+                        "&:hover": { bgcolor: "#f0f4ff" },
+                        "&:last-child td": { border: 0 },
+                        transition: "background 0.15s",
                       }}
                     >
-                      <Typography
-                        fontWeight={900}
-                        fontSize={28}
-                        color={style.color}
-                        lineHeight={1}
-                      >
-                        {pct}%
-                      </Typography>
-                      <Typography fontSize={11} color={style.color} fontWeight={600} mt={0.5}>
-                        {label}
-                      </Typography>
-                      <Typography fontSize={11} color={style.color} mt={0.3} opacity={0.8}>
-                        {r.score}/{r.totalQuestions}
-                      </Typography>
-                    </Box>
+                      <TableCell sx={{ py: 2, color: "text.disabled", fontSize: 13 }}>
+                        {index + 1}
+                      </TableCell>
 
-                    {/* Main content */}
-                    <Box sx={{ flex: 1, p: 2.5 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                          <Avatar
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              fontSize: 13,
-                              fontWeight: 700,
-                              bgcolor: "#eef2ff",
-                              color: "#1e3c72",
-                              border: "1px solid #e0e7ff",
-                            }}
-                          >
-                            {getInitials(assessmentName)}
-                          </Avatar>
-                          <Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography fontWeight={700} fontSize={15}>
-                                {assessmentName}
-                              </Typography>
-                              {index === 0 && filter === "All" && (
-                                <Chip label="Latest" size="small" color="primary" sx={{ fontSize: 9, fontWeight: 700, height: 18 }} />
-                              )}
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.3 }}>
-                              <AccessTimeRoundedIcon sx={{ fontSize: 12, color: "text.disabled" }} />
-                              <Typography variant="caption" color="text.secondary">
-                                {new Date(r.createdAt).toLocaleString()}
-                              </Typography>
-                            </Box>
-                          </Box>
+                      <TableCell sx={{ py: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography fontWeight={600} fontSize={14}>{name}</Typography>
+                          {isLatest && (
+                            <Chip label="Latest" size="small" color="primary" sx={{ fontSize: 9, height: 18, fontWeight: 700 }} />
+                          )}
                         </Box>
+                        {/* <Typography variant="caption" color="text.secondary">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </Typography> */}
+                      </TableCell>
 
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          endIcon={<PlayArrowRoundedIcon sx={{ fontSize: "14px !important" }} />}
-                          onClick={() => navigate("/assessments")}
-                          sx={{
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontWeight: 600,
-                            fontSize: 12,
-                            borderColor: "#e0e7ff",
-                            color: "#1e3c72",
-                            "&:hover": { bgcolor: "#eef2ff", borderColor: "#2a5298" },
-                          }}
-                        >
-                          Retry
-                        </Button>
-                      </Box>
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <Typography fontWeight={700} fontSize={14} color={style.color}>
+                          {r.score} / {r.totalQuestions}
+                        </Typography>
+                      </TableCell>
 
-                      {/* Progress bar */}
-                      <LinearProgress
-                        variant="determinate"
-                        value={pct}
-                        sx={{
-                          height: 6,
-                          borderRadius: 3,
-                          bgcolor: "#f0f2f8",
-                          "& .MuiLinearProgress-bar": {
-                            bgcolor: style.track,
-                            borderRadius: 3,
-                          },
-                        }}
-                      />
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
-                        <Typography variant="caption" color="text.secondary">0%</Typography>
-                        <Typography variant="caption" fontWeight={600} color={style.color}>{pct}%</Typography>
-                        <Typography variant="caption" color="text.secondary">100%</Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Paper>
-              );
-            })}
-          </Stack>
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <Box sx={{ display: "inline-block", px: 1.5, py: 0.4, borderRadius: 2, bgcolor: style.bg }}>
+                          <Typography fontWeight={800} fontSize={14} color={style.color}>
+                            {pct}%
+                          </Typography>
+                        </Box>
+                      </TableCell>
+
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <Chip label={label} color={style.chip} size="small" sx={{ fontWeight: 700, fontSize: 11 }} />
+                      </TableCell>
+
+                      <TableCell align="right" sx={{ py: 2 }}>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </Typography>
+                        {/* <Typography variant="caption" color="text.disabled">
+                          {new Date(r.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </Typography> */}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </Box>
     </Box>

@@ -36,9 +36,9 @@ namespace AssessmentService.Repositories
         public async Task<List<AssessmentQuestion>> GetByAssessmentIdAsync(int assessmentId)
         {
             return await _context.AssessmentQuestions
-                .AsNoTracking()
                 .Where(x => x.AssessmentId == assessmentId)
                 .Include(x => x.Question)
+                 .ThenInclude(q => q.TestCases)
                 .ToListAsync();
         }
 

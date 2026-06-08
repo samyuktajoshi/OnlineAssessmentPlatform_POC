@@ -4,6 +4,7 @@ using AssessmentService.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AssessmentService.Migrations
 {
     [DbContext(typeof(AssessmentDbContext))]
-    partial class AssessmentDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514105339_AddCodingQuestionSupport")]
+    partial class AddCodingQuestionSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,35 +77,6 @@ namespace AssessmentService.Migrations
                     b.ToTable("AssessmentQuestions");
                 });
 
-            modelBuilder.Entity("AssessmentService.Models.TestCase", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ExpectedOutput")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Input")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsHidden")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuestionId");
-
-                    b.ToTable("TestCases");
-                });
-
             modelBuilder.Entity("Question", b =>
                 {
                     b.Property<int>("Id")
@@ -112,6 +86,12 @@ namespace AssessmentService.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CorrectAnswers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExpectedOutput")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Input")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OptionA")
@@ -160,17 +140,6 @@ namespace AssessmentService.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("AssessmentService.Models.TestCase", b =>
-                {
-                    b.HasOne("Question", "Question")
-                        .WithMany("TestCases")
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Question");
-                });
-
             modelBuilder.Entity("AssessmentService.Models.Assessment", b =>
                 {
                     b.Navigation("AssessmentQuestions");
@@ -179,8 +148,6 @@ namespace AssessmentService.Migrations
             modelBuilder.Entity("Question", b =>
                 {
                     b.Navigation("AssessmentQuestions");
-
-                    b.Navigation("TestCases");
                 });
 #pragma warning restore 612, 618
         }

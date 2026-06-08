@@ -25,6 +25,7 @@ import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
 
 function Assessments() {
   const [assessments, setAssessments] = useState([]);
@@ -67,25 +68,29 @@ function Assessments() {
 
   // ── Filter + Search logic ──
   const filtered = assessments.filter((a) => {
-    const name = (a.title ?? a.assessmentName ?? "").toLowerCase();
+    const name = (a.assessmentName ?? a.title ?? "").toLowerCase();
     const desc = (a.description ?? "").toLowerCase();
     const q = search.toLowerCase();
-
     const matchesSearch = name.includes(q) || desc.includes(q);
 
-    const assessmentResults = results.filter((r) => r.assessmentId === a.assessmentId);
+    const assessmentResults = results.filter(
+      (r) => Number(r.assessmentId) === Number(a.assessmentId)
+    );
     const attempts = assessmentResults.length;
 
     const now = new Date();
     const notStartedYet = a.availableFrom && now < new Date(a.availableFrom);
     const isExpired = a.availableUntil && now > new Date(a.availableUntil);
 
+    // ✅ Closed = admin manually closed OR expired by date
+    const isClosed = a.status === "Closed" || isExpired;
+
     const matchesFilter =
       filter === "All" ? true
-      : filter === "Available" ? !notStartedYet && !isExpired && attempts === 0
-      : filter === "Attempted" ? attempts > 0
-      : filter === "Closed" ? isExpired
-      : filter === "Coming Soon" ? notStartedYet
+      : filter === "Available" ? !notStartedYet && !isClosed && attempts === 0
+      : filter === "Attempted" ? attempts > 0 && !isClosed
+      : filter === "Closed" ? isClosed
+      : filter === "Coming Soon" ? notStartedYet && !isClosed
       : true;
 
     return matchesSearch && matchesFilter;
@@ -102,29 +107,11 @@ function Assessments() {
   return (
     <Box sx={{ backgroundColor: "#f0f2f8", minHeight: "100vh" }}>
 
-      {/* HEADER — unchanged */}
-      <Box
-        sx={{
-          background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
-          px: 4,
-          py: 5,
-          color: "white",
-          mb: 4,
-        }}
-      >
+      {/* Header */}
+      <Box sx={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", px: 4, py: 5, color: "white", mb: 4 }}>
         <Box maxWidth={900} mx="auto">
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Box
-              sx={{
-                width: 52,
-                height: 52,
-                borderRadius: 2,
-                bgcolor: "rgba(255,255,255,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+            <Box sx={{ width: 52, height: 52, borderRadius: 2, bgcolor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <AssignmentIcon sx={{ fontSize: 28, color: "white" }} />
             </Box>
             <Box>
@@ -141,7 +128,7 @@ function Assessments() {
 
       <Box maxWidth={900} mx="auto" px={3} pb={6}>
 
-        {/* ── Search + Filter bar ── */}
+        {/* Search + Filter */}
         <Box sx={{ mb: 3, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: { sm: "center" } }}>
           <TextField
             placeholder="Search assessments..."
@@ -199,7 +186,7 @@ function Assessments() {
           </Typography>
         )}
 
-        {/* CARDS — all unchanged */}
+        {/* Cards */}
         {filtered.length === 0 ? (
           <Card variant="outlined" sx={{ borderRadius: 3, textAlign: "center", py: 8 }}>
             <AssignmentIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
@@ -222,20 +209,25 @@ function Assessments() {
           <Stack spacing={2.5}>
             {filtered.map((a, index) => {
               const assessmentResults = results.filter(
-                (r) => r.assessmentId === a.assessmentId
+                (r) => Number(r.assessmentId) === Number(a.assessmentId)
               );
               const attempts = assessmentResults.length;
               const bestScore = attempts > 0
                 ? Math.max(...assessmentResults.map((r) => r.score))
                 : null;
-              const totalQuestions = attempts > 0 ? assessmentResults[0].totalQuestions : null;
+              const totalQuestions = attempts > 0
+                ? assessmentResults[0].totalQuestions
+                : null;
 
               const now = new Date();
               const availableFrom = a.availableFrom ? new Date(a.availableFrom) : null;
               const availableUntil = a.availableUntil ? new Date(a.availableUntil) : null;
               const notStartedYet = availableFrom && now < availableFrom;
               const isExpired = availableUntil && now > availableUntil;
-              const canStartTest = !notStartedYet && !isExpired;
+
+              // ✅ isClosed covers both admin-closed and date-expired
+              const isClosed = a.status === "Closed" || isExpired;
+              const canStartTest = !notStartedYet && !isClosed;
 
               return (
                 <Card
@@ -243,11 +235,14 @@ function Assessments() {
                   variant="outlined"
                   sx={{
                     borderRadius: 3,
-                    border: "1px solid #e0e7ff",
+                    border: `1px solid ${isClosed ? "#e2e8f0" : "#e0e7ff"}`,
                     transition: "all 0.2s",
+                    opacity: isClosed ? 0.85 : 1,
                     "&:hover": {
-                      boxShadow: "0 8px 24px rgba(30,60,114,0.12)",
-                      transform: "translateY(-2px)",
+                      boxShadow: isClosed
+                        ? "none"
+                        : "0 8px 24px rgba(30,60,114,0.12)",
+                      transform: isClosed ? "none" : "translateY(-2px)",
                     },
                   }}
                 >
@@ -259,31 +254,37 @@ function Assessments() {
                             width: 40,
                             height: 40,
                             borderRadius: 2,
-                            background: "linear-gradient(135deg, #1e3c72, #2a5298)",
+                            background: isClosed
+                              ? "linear-gradient(135deg, #94a3b8, #64748b)"
+                              : "linear-gradient(135deg, #1e3c72, #2a5298)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          <Typography color="white" fontWeight={700}>
-                            {String(index + 1).padStart(2, "0")}
-                          </Typography>
+                          {isClosed
+                            ? <LockRoundedIcon sx={{ fontSize: 18, color: "white" }} />
+                            : <Typography color="white" fontWeight={700} fontSize={14}>
+                                {String(index + 1).padStart(2, "0")}
+                              </Typography>
+                          }
                         </Box>
-                        <Typography variant="h6" fontWeight={700}>
-                          {a.title ?? a.assessmentName}
+                        <Typography variant="h6" fontWeight={700} color={isClosed ? "text.secondary" : "text.primary"}>
+                          {a.assessmentName ?? a.title}
                         </Typography>
                       </Box>
 
                       <Chip
                         label={
                           notStartedYet ? "Coming Soon"
-                          : isExpired ? "Closed"
+                          : isClosed ? "Closed"
                           : attempts > 0 ? "Attempted"
                           : "Available"
                         }
                         size="small"
                         color={
-                          notStartedYet || isExpired ? "default"
+                          isClosed ? "default"
+                          : notStartedYet ? "default"
                           : attempts > 0 ? "warning"
                           : "success"
                         }
@@ -300,11 +301,27 @@ function Assessments() {
                     </Stack>
 
                     <Stack direction="row" spacing={1} alignItems="center" ml={0.5}>
-                      <AccessTimeRoundedIcon fontSize="small" sx={{ color: "#1e3c72" }} />
-                      <Typography variant="body2" fontWeight={500} color="#1e3c72">
-                        {a.durationMinutes} mins
+                      <AccessTimeRoundedIcon fontSize="small" sx={{ color: isClosed ? "text.disabled" : "#1e3c72" }} />
+                      <Typography variant="body2" fontWeight={500} color={isClosed ? "text.disabled" : "#1e3c72"}>
+                        {a.durationMinutes ?? a.duration} mins
                       </Typography>
                     </Stack>
+
+                    {/* Open/close dates */}
+                    {(a.availableFrom || a.availableUntil) && (
+                      <Stack direction="row" spacing={2} mt={1} ml={0.5}>
+                        {a.availableFrom && (
+                          <Typography variant="caption" color="text.disabled">
+                            Opens: {new Date(a.availableFrom).toLocaleDateString()}
+                          </Typography>
+                        )}
+                        {a.availableUntil && (
+                          <Typography variant="caption" color={isExpired ? "error" : "text.disabled"}>
+                            {isExpired ? "Closed" : "Closes"}: {new Date(a.availableUntil).toLocaleDateString()}
+                          </Typography>
+                        )}
+                      </Stack>
+                    )}
 
                     {attempts > 0 && (
                       <Box mt={2} ml={0.5}>
@@ -323,18 +340,28 @@ function Assessments() {
                   <CardActions sx={{ px: 3, py: 2, justifyContent: "flex-end" }}>
                     <Button
                       variant="contained"
-                      endIcon={<PlayArrowRoundedIcon />}
+                      endIcon={isClosed
+                        ? <LockRoundedIcon sx={{ fontSize: "16px !important" }} />
+                        : <PlayArrowRoundedIcon />
+                      }
                       disabled={!canStartTest}
-                      onClick={() => navigate(`/test/${a.assessmentId}`)}
+                      onClick={() => canStartTest && navigate(`/test/${a.assessmentId}`)}
                       sx={{
-                        background: "linear-gradient(135deg, #1e3c72, #2a5298)",
+                        background: isClosed
+                          ? "#94a3b8"
+                          : "linear-gradient(135deg, #1e3c72, #2a5298)",
                         borderRadius: 2,
                         px: 3,
                         textTransform: "none",
                         fontWeight: 600,
+                        "&:disabled": {
+                          background: "#94a3b8",
+                          color: "white",
+                          opacity: 1,
+                        },
                       }}
                     >
-                      {isExpired ? "Closed"
+                      {isClosed ? "Closed"
                         : notStartedYet ? "Coming Soon"
                         : attempts > 0 ? "Retry Test"
                         : "Start Test"}

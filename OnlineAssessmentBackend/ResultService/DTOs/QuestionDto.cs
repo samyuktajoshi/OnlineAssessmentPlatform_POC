@@ -3,13 +3,20 @@
     public class QuestionDto
     {
         public int Id { get; set; }
-        public string CorrectAnswers { get; set; }
+
         public string Text { get; set; }
+
+        public int Type { get; set; }
+
+        // ✅ MCQ
+        public string CorrectAnswers { get; set; }
 
         public string OptionA { get; set; }
         public string OptionB { get; set; }
         public string OptionC { get; set; }
         public string OptionD { get; set; }
 
+        // ✅ NEW: Multiple test cases
+        public List<TestCaseDto> TestCases { get; set; }
     }
 }

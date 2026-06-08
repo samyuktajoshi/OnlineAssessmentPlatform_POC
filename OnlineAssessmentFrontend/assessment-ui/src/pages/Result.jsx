@@ -76,69 +76,125 @@ function Result() {
 
       <Stack spacing={2}>
         {result.details.map((q, index) => {
-          const options = [
-            { key: "A", value: q.optionA },
-            { key: "B", value: q.optionB },
-            { key: "C", value: q.optionC },
-            { key: "D", value: q.optionD }
-          ];
+
+          const isCoding =
+            !q.optionA && !q.optionB && !q.optionC && !q.optionD;
 
           return (
             <Card key={q.questionId}>
               <CardContent>
+
                 {/* ✅ QUESTION */}
                 <Typography fontWeight={600}>
                   Q{index + 1}. {q.questionText}
                 </Typography>
 
-                {/* ✅ OPTIONS */}
                 <Box mt={2}>
-                  {options.map((opt) => {
-                    const isUser = q.userAnswer?.includes(opt.key);
-                    const isCorrect = q.correctAnswer?.includes(opt.key);
 
-                    return (
+                  {isCoding ? (
+                    /* ✅ CODING QUESTION UI */
+                    <>
+                      {/* ✅ CODE */}
+                      <Typography fontWeight={600}>
+                        Your Code:
+                      </Typography>
+
                       <Box
-                        key={opt.key}
                         sx={{
-                          p: 1.5,
-                          mt: 1,
+                          background: "#111",
+                          color: "#0f0",
+                          p: 2,
                           borderRadius: 1,
-                          border: "1px solid #ddd",
-                          backgroundColor: isCorrect
-                            ? "#e8f5e9"     // ✅ green (correct)
-                            : isUser
-                            ? "#ffebee"     // ❌ red (wrong)
-                            : "#fafafa"
+                          fontFamily: "monospace",
+                          mt: 1,
                         }}
                       >
-                        <Typography>
-                          <strong>{opt.key}.</strong> {opt.value}
-                        </Typography>
-
-                        {/* ✅ LABELS */}
-                        {isCorrect && (
-                          <Typography color="green" fontSize={13}>
-                            ✅ Correct Answer
-                          </Typography>
-                        )}
-
-                        {isUser && !isCorrect && (
-                          <Typography color="red" fontSize={13}>
-                            ❌ Your Answer
-                          </Typography>
-                        )}
+                        {q.userAnswer || "No code submitted"}
                       </Box>
-                    );
-                  })}
+
+                      {/* ✅ EXPECTED OUTPUT */}
+                      <Typography mt={2} fontWeight={600}>
+                        Expected Output:
+                      </Typography>
+
+                      <Box
+                        sx={{
+                          background: "#f5f5f5",
+                          p: 2,
+                          borderRadius: 1,
+                          fontFamily: "monospace",
+                          mt: 1,
+                        }}
+                      >
+                        {q.correctAnswer || "N/A"}
+                      </Box>
+
+                      {/* ✅ RESULT */}
+                     
+                    </>
+                  ) : (
+                    /* ✅ MCQ UI */
+                    <>
+                      {["A", "B", "C", "D"].map((opt) => {
+                        const value = q[`option${opt}`];
+                        if (!value) return null;
+
+                        const isUser =
+                          q.userAnswer?.includes(opt);
+                        const isCorrect =
+                          q.correctAnswer?.includes(opt);
+
+                        return (
+                          <Box
+                            key={opt}
+                            sx={{
+                              p: 1.5,
+                              mt: 1,
+                              borderRadius: 1,
+                              border: "1px solid #ddd",
+                              backgroundColor: isCorrect
+                                ? "#e8f5e9"
+                                : isUser
+                                ? "#ffebee"
+                                : "#fafafa",
+                            }}
+                          >
+                            <Typography>
+                              <strong>{opt}.</strong>{" "}
+                              {value}
+                            </Typography>
+
+                            {isCorrect && (
+                              <Typography
+                                color="green"
+                                fontSize={13}
+                              >
+                                ✅ Correct Answer
+                              </Typography>
+                            )}
+
+                            {isUser && !isCorrect && (
+                              <Typography
+                                color="red"
+                                fontSize={13}
+                              >
+                                ❌ Your Answer
+                              </Typography>
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </>
+                  )}
+
                 </Box>
+
               </CardContent>
             </Card>
           );
         })}
       </Stack>
 
-      {/* ✅ FOOTER */}
       <Divider sx={{ my: 3 }} />
 
       <Button
