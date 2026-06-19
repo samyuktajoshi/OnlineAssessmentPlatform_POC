@@ -1,9 +1,11 @@
-﻿using AssessmentService.DTOs;
+﻿using AssessmentService.Data;
+using AssessmentService.DTOs;
+using AssessmentService.Exceptions;
 using AssessmentService.Models;
 using AssessmentService.Repositories.Interfaces;
 using AssessmentService.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using AssessmentService.Exceptions;
 
 namespace AssessmentService.Services
 {
@@ -11,13 +13,16 @@ namespace AssessmentService.Services
     {
         private readonly IAssessmentRepository _repo;
         private readonly ILogger<AssessmentService> _logger;
-
+        private readonly AssessmentDbContext _context;
         public AssessmentService(
             IAssessmentRepository repo,
-            ILogger<AssessmentService> logger)
+            ILogger<AssessmentService> logger,
+            AssessmentDbContext context
+            )
         {
             _repo = repo;
             _logger = logger;
+            _context = context;
         }
 
         // CREATE (ADMIN)
@@ -53,8 +58,7 @@ namespace AssessmentService.Services
         }
 
         // GET ALL (CANDIDATE VIEW)
-        // Returns all Active assessments including Coming Soon
-        // Frontend handles display logic based on AvailableFrom/Until
+        
         public async Task<List<AssessmentDto>> GetAllAsync()
         {
             _logger.LogInformation("Fetching assessments for candidate view");
@@ -75,10 +79,8 @@ namespace AssessmentService.Services
                 }
             }
 
-            // ✅ Return Active AND Closed — exclude Draft and Hidden
-            // Active = candidate can take it
-            // Closed = candidate can see it but cannot start it
-            // Draft/Hidden = admin only, not visible to candidates at all
+           
+            // Draft/Hidden = admin only, not visible to candidates 
             var visible = list.Where(a => a.Status == "Active" || a.Status == "Closed");
 
             return visible.Select(a => new AssessmentDto
@@ -89,11 +91,11 @@ namespace AssessmentService.Services
                 DurationMinutes = a.DurationMinutes,
                 AvailableFrom = a.AvailableFrom,
                 AvailableUntil = a.AvailableUntil,
-                Status = a.Status   // ✅ include status so frontend knows
+                Status = a.Status  
             }).ToList();
         }
 
-        // GET BY ID (CANDIDATE START TEST)
+        // GET BY ID 
         public async Task<AssessmentDto?> GetByIdAsync(int id)
         {
             _logger.LogInformation("Fetching assessment {Id}", id);
@@ -232,5 +234,20 @@ namespace AssessmentService.Services
 
             _logger.LogInformation("Assessment {Id} status updated to {Status}", id, status);
         }
+        public async Task<AssessmentDto> GetByIdInternalAsync(int id)
+        {
+            var assessment = await _context.Assessments.FindAsync(id);
+
+            if (assessment == null)
+                return null;
+
+            return new AssessmentDto
+            {
+                AssessmentName = assessment.Title
+            };
+        }
+
+
+        
     }
 }

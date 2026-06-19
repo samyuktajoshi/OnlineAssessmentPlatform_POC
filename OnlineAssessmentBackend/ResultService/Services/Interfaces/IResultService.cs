@@ -16,7 +16,7 @@ namespace ResultService.Services.Interfaces
         Task<Result> GetResultBySubmissionIdAsync(int submissionId);
 
         Task<ResultWithDetailsDto> GetDetailedResultAsync(int submissionId);
-
+        Task<UserAnalyticsDto> GetUserAnalyticsAsync(int userId);
 
     }
 }

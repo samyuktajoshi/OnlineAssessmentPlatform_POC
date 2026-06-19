@@ -20,6 +20,8 @@ import ViewSubmissions from "./pages/ViewSubmissions";
 import ManageAssessments from "./pages/ManageAssessments";
 import MyResults from "./pages/MyResults";
 import CandidateHome from "./pages/CandidateHome";
+import AdminUsers from "./pages/AdminUsers";
+import CandidateAnalytics from "./pages/CandidateAnalytics";
 
 function App() {
   return (
@@ -66,7 +68,16 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+<Route
+            path="/admin/users/:userId"
+            element={
+              <ProtectedRoute role="Admin">
+                <Layout>
+                  <CandidateAnalytics />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/create"
             element={
@@ -120,7 +131,16 @@ function App() {
     </ProtectedRoute>
   }
 />
-
+<Route
+  path="/admin/users"
+  element={
+    <ProtectedRoute role="Admin">
+      <Layout>
+        <AdminUsers />
+      </Layout>
+    </ProtectedRoute>
+  }
+/>
           {/* 🔐 CANDIDATE ROUTES */}
           <Route
             path="/candidate-home"

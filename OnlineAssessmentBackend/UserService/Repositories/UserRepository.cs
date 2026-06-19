@@ -46,7 +46,16 @@ namespace UserService.Repositories
                     u.Email.ToLower() == value
                 );
         }
-
+        //public async Task<List<User>> GetAllAsync()
+        //{
+        //    return await _context.Users.ToListAsync();
+        //}
+        public async Task<List<User>> GetAllAsync()
+        {
+            return await _context.Users
+                .Where(u => u.Role == "Candidate")
+                .ToListAsync();
+        }
         // ✅ ADD USER
         public async Task AddUserAsync(User user)
         {

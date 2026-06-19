@@ -17,5 +17,7 @@ namespace AssessmentService.Services.Interfaces
 
         Task<string> DeleteAsync(int id, ClaimsPrincipal user);
         Task UpdateStatusAsync(int assessmentId, string status, ClaimsPrincipal user);
+        Task<AssessmentDto> GetByIdInternalAsync(int id);
+         
     }
 }

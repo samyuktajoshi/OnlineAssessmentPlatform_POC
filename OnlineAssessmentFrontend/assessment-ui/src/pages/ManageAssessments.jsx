@@ -107,8 +107,8 @@ function ManageAssessments() {
       <Box
         sx={{
           background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
-          px: 4,
-          py: 5,
+          px: 3,
+          py: 2,
           color: "white",
           mb: 4,
         }}
@@ -292,7 +292,17 @@ function ManageAssessments() {
 
                             {/* Meta row */}
                             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 0.5, flexWrap: "wrap" }}>
-                              <Typography variant="body2" color="text.secondary" noWrap>
+
+<Typography
+  variant="body2"
+  color="text.secondary"
+  sx={{
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+  }}
+>
                                 {a.description || "No description"}
                               </Typography>
 

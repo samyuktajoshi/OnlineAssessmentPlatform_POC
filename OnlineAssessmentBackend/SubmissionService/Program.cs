@@ -12,14 +12,14 @@ using SubmissionService.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// -------------------- DATABASE --------------------
+// db
 builder.Services.AddDbContext<SubmissionDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
 
-// -------------------- JWT AUTH --------------------
+// JWT AUTH
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -45,7 +45,7 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization();
 
-// -------------------- CORS --------------------
+//cors
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -57,18 +57,18 @@ builder.Services.AddCors(options =>
     });
 });
 
-// -------------------- DEPENDENCY INJECTION --------------------
+//  DEPENDENCY INJECTION 
 builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
 builder.Services.AddScoped<ISubmissionService, SubmissionnService>();
 
-// -------------------- CONTROLLERS --------------------
+//  CONTROLLERS 
 builder.Services.AddControllers();
 
-// -------------------- SWAGGER --------------------
+// SWAGGER 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// -------------------- APP --------------------
+// APP 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -77,12 +77,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// -------------------- MIDDLEWARE PIPELINE --------------------
+// MIDDLEWARE PIPELINE
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 
-app.UseMiddleware<ExceptionMiddleware>(); // global error handling
+app.UseMiddleware<ExceptionMiddleware>(); // error handling
 
 app.UseAuthentication();
 app.UseAuthorization();

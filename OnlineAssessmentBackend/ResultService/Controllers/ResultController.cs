@@ -15,7 +15,7 @@ namespace ResultService.Controllers
             _service = service;
         }
 
-        // ✅ CALCULATE RESULT (Candidate)
+        // CALCULATE RESULT (Candidate)
         [Authorize(Roles = "Candidate")]
         [HttpPost("{submissionId}")]
         public async Task<IActionResult> Calculate(int submissionId)
@@ -24,7 +24,7 @@ namespace ResultService.Controllers
             return Ok(result);
         }
 
-        // ✅ MY RESULTS (Candidate)
+        // MY RESULTS (Candidate)
         [Authorize(Roles = "Candidate")]
         [HttpGet("my")]
         public async Task<IActionResult> GetMyResults()
@@ -33,7 +33,7 @@ namespace ResultService.Controllers
             return Ok(results);
         }
 
-        // ✅ ALL RESULTS (Admin)
+        //  ALL RESULTS (Admin)
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAllResults()
@@ -75,6 +75,11 @@ namespace ResultService.Controllers
             var result = await _service.GetDetailedResultAsync(submissionId);
             return Ok(result);
         }
-
+        [Authorize(Roles = "Admin")]
+        [HttpGet("user/{userId}/analytics")]
+        public async Task<IActionResult> GetUserAnalytics(int userId)
+        {
+            return Ok(await _service.GetUserAnalyticsAsync(userId));
+        }
     }
 }

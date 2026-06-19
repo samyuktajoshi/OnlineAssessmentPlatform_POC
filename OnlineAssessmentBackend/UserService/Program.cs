@@ -15,14 +15,14 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-// -------------------- DATABASE --------------------
+// DATABASE 
 builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("Default")
     )
 );
 
-// -------------------- JWT --------------------
+//  JWT 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key not configured");
 
@@ -46,7 +46,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// -------------------- CORS --------------------
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
@@ -59,15 +58,15 @@ builder.Services.AddCors(options =>
         });
 });
 
-// -------------------- DI --------------------
+//  DI 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtHelper>();
 
-// -------------------- CONTROLLERS --------------------
+//  CONTROLLERS 
 builder.Services.AddControllers();
 
-// -------------------- SWAGGER (BASIC ONLY) --------------------
+//  SWAGGER 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

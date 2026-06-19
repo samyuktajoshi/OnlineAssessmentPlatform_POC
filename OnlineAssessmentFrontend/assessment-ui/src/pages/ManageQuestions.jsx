@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import assessmentApi from "../api/assessmentApi";
-
+import { FormControlLabel, Checkbox } from "@mui/material";
 import {
   Box,
   Typography,
@@ -464,105 +464,245 @@ function ManageQuestions() {
 
       {/* Edit Dialog */}
       <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
-        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
-          Edit Question
-        </DialogTitle>
-        <Divider />
+  open={open}
+  onClose={() => setOpen(false)}
+  maxWidth="md"
+  fullWidth
+  PaperProps={{ sx: { borderRadius: 3 } }}
+>
+  <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
+    Edit Question
+  </DialogTitle>
 
-        <DialogContent sx={{ pt: 3 }}>
-          {editingQuestion && (
-            <Stack spacing={3}>
-              <TextField
-                fullWidth
-                multiline
-                minRows={2}
-                label="Question Text"
-                value={editingQuestion.text}
-                onChange={(e) => setEditingQuestion({ ...editingQuestion, text: e.target.value })}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              />
+  <Divider />
 
-              <TextField
-                select
-                fullWidth
-                label="Question Type"
-                value={editingQuestion.type}
-                onChange={(e) => setEditingQuestion({ ...editingQuestion, type: Number(e.target.value) })}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+  <DialogContent sx={{ pt: 3 }}>
+    {editingQuestion && (
+      <Stack spacing={3}>
+
+        {/* ✅ QUESTION TEXT */}
+        <TextField
+          fullWidth
+          multiline
+          minRows={2}
+          label="Question Text"
+          value={editingQuestion.text}
+          onChange={(e) =>
+            setEditingQuestion({
+              ...editingQuestion,
+              text: e.target.value
+            })
+          }
+        />
+
+        {/* ✅ TYPE */}
+        <TextField
+          select
+          fullWidth
+          label="Question Type"
+          value={editingQuestion.type}
+          onChange={(e) =>
+            setEditingQuestion({
+              ...editingQuestion,
+              type: Number(e.target.value)
+            })
+          }
+        >
+          <MenuItem value={1}>📝 Single Choice</MenuItem>
+          <MenuItem value={2}>☑️ Multi Select</MenuItem>
+          <MenuItem value={3}>✅ True / False</MenuItem>
+          <MenuItem value={4}>💻 Coding</MenuItem>
+        </TextField>
+
+        {/* ✅ CODING UI */}
+        {editingQuestion.type === 4 ? (
+
+          <Stack spacing={2}>
+
+            {/* Starter Code */}
+            <TextField
+              fullWidth
+              multiline
+              minRows={6}
+              label="Starter Code"
+              value={editingQuestion.starterCode || ""}
+              onChange={(e) =>
+                setEditingQuestion({
+                  ...editingQuestion,
+                  starterCode: e.target.value
+                })
+              }
+            />
+
+            {/* Test Cases */}
+            <Typography fontWeight={600}>Test Cases</Typography>
+
+            {(editingQuestion.testCases || []).map((tc, index) => (
+              <Box
+                key={index}
+                sx={{
+                  border: "1px solid #eee",
+                  borderRadius: 2,
+                  p: 2
+                }}
               >
-                <MenuItem value={1}>📝 Single Choice</MenuItem>
-                <MenuItem value={2}>☑️ Multiple Choice</MenuItem>
-                <MenuItem value={3}>✅ True / False</MenuItem>
-              </TextField>
+                <Stack spacing={2}>
 
-              {editingQuestion.type === 3 ? (
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <TextField fullWidth value="True" disabled
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "#f0fdf4" } }} />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField fullWidth value="False" disabled
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "#fef2f2" } }} />
-                  </Grid>
-                </Grid>
-              ) : (
-                <Grid container spacing={2}>
-                  {["A", "B", "C", "D"].map((opt) => (
-                    <Grid item xs={6} key={opt}>
-                      <TextField
-                        fullWidth
-                        label={`Option ${opt}`}
-                        value={editingQuestion[`option${opt}`]}
-                        onChange={(e) => setEditingQuestion({ ...editingQuestion, [`option${opt}`]: e.target.value })}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: "#1e3c72", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Typography fontSize={11} fontWeight={700} color="white">{opt}</Typography>
-                              </Box>
-                            </InputAdornment>
-                          ),
+                  <TextField
+                    label="Input"
+                    fullWidth
+                    value={tc.input}
+                    onChange={(e) => {
+                      const updated = [...editingQuestion.testCases];
+                      updated[index].input = e.target.value;
+                      setEditingQuestion({
+                        ...editingQuestion,
+                        testCases: updated
+                      });
+                    }}
+                  />
+
+                  <TextField
+                    label="Expected Output"
+                    fullWidth
+                    value={tc.expectedOutput}
+                    onChange={(e) => {
+                      const updated = [...editingQuestion.testCases];
+                      updated[index].expectedOutput = e.target.value;
+                      setEditingQuestion({
+                        ...editingQuestion,
+                        testCases: updated
+                      });
+                    }}
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={tc.isHidden}
+                        onChange={(e) => {
+                          const updated = [...editingQuestion.testCases];
+                          updated[index].isHidden = e.target.checked;
+                          setEditingQuestion({
+                            ...editingQuestion,
+                            testCases: updated
+                          });
                         }}
                       />
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
+                    }
+                    label="Hidden Test Case"
+                  />
 
-              <TextField
-                fullWidth
-                label={editingQuestion.type === 2 ? "Correct Answers (e.g. A,C)" : "Correct Answer (e.g. A)"}
-                value={editingQuestion.correctAnswers}
-                onChange={(e) => setEditingQuestion({ ...editingQuestion, correctAnswers: e.target.value.toUpperCase() })}
-                helperText={editingQuestion.type === 2 ? "Separate multiple answers with a comma" : ""}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              />
-            </Stack>
-          )}
-        </DialogContent>
+                  <Button
+                    color="error"
+                    onClick={() => {
+                      const updated = editingQuestion.testCases.filter((_, i) => i !== index);
+                      setEditingQuestion({
+                        ...editingQuestion,
+                        testCases: updated
+                      });
+                    }}
+                  >
+                    Remove
+                  </Button>
 
-        <Divider />
-        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={() => setOpen(false)} sx={{ borderRadius: 2, textTransform: "none", color: "text.secondary" }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleUpdate}
-            sx={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)", borderRadius: 2, textTransform: "none", fontWeight: 700, px: 3 }}
-          >
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
+                </Stack>
+              </Box>
+            ))}
+
+            {/* Add Test Case */}
+            <Button
+              variant="outlined"
+              onClick={() =>
+                setEditingQuestion({
+                  ...editingQuestion,
+                  testCases: [
+                    ...(editingQuestion.testCases || []),
+                    { input: "", expectedOutput: "", isHidden: false }
+                  ]
+                })
+              }
+            >
+              Add Test Case
+            </Button>
+
+          </Stack>
+
+        ) : editingQuestion.type === 3 ? (
+
+          /* ✅ TRUE/FALSE */
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField fullWidth value="True" disabled />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField fullWidth value="False" disabled />
+            </Grid>
+          </Grid>
+
+        ) : (
+
+          /* ✅ OPTIONS */
+          <Grid container spacing={2}>
+            {["A", "B", "C", "D"].map((opt) => (
+              <Grid item xs={6} key={opt}>
+                <TextField
+                  fullWidth
+                  label={`Option ${opt}`}
+                  value={editingQuestion[`option${opt}`] || ""}
+                  onChange={(e) =>
+                    setEditingQuestion({
+                      ...editingQuestion,
+                      [`option${opt}`]: e.target.value
+                    })
+                  }
+                />
+              </Grid>
+            ))}
+          </Grid>
+
+        )}
+
+        {/* ✅ CORRECT ANSWER (ONLY NON-CODING) */}
+        {editingQuestion.type !== 4 && (
+          <TextField
+            fullWidth
+            label={
+              editingQuestion.type === 2
+                ? "Correct Answers (e.g. A,C)"
+                : "Correct Answer (e.g. A)"
+            }
+            value={editingQuestion.correctAnswers || ""}
+            onChange={(e) =>
+              setEditingQuestion({
+                ...editingQuestion,
+                correctAnswers: e.target.value.toUpperCase()
+              })
+            }
+            helperText={
+              editingQuestion.type === 2
+                ? "Separate multiple answers with comma"
+                : ""
+            }
+          />
+        )}
+
+      </Stack>
+    )}
+  </DialogContent>
+
+  <Divider />
+
+  <DialogActions sx={{ px: 3, py: 2 }}>
+    <Button onClick={() => setOpen(false)}>
+      Cancel
+    </Button>
+
+    <Button variant="contained" onClick={handleUpdate}>
+      Save Changes
+    </Button>
+  </DialogActions>
+</Dialog>
 
       {/* Delete Confirm Dialog */}
       <Dialog

@@ -17,7 +17,7 @@ namespace AssessmentService.Services
             _logger = logger;
         }
 
-        // ✅ CREATE
+        //  CREATE
         public async Task<int> CreateAsync(CreateQuestionDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Text))
@@ -25,7 +25,7 @@ namespace AssessmentService.Services
 
             var type = (QuestionType)dto.Type;
 
-            // ✅ MCQ validation
+            // MCQ validation
             if (type != QuestionType.TrueFalse && type != QuestionType.Coding)
             {
                 if (string.IsNullOrWhiteSpace(dto.OptionA) ||
@@ -37,7 +37,7 @@ namespace AssessmentService.Services
                 }
             }
 
-            // ✅ Correct answer (non-coding)
+            //  Correct answer 
             if (type != QuestionType.Coding &&
                 string.IsNullOrWhiteSpace(dto.CorrectAnswers))
             {
@@ -49,7 +49,7 @@ namespace AssessmentService.Services
                 Text = dto.Text,
                 Type = type,
 
-                // ✅ MCQ
+                //  MCQ
                 OptionA = type == QuestionType.TrueFalse ? "True" : dto.OptionA,
                 OptionB = type == QuestionType.TrueFalse ? "False" : dto.OptionB,
                 OptionC = type == QuestionType.TrueFalse ? null : dto.OptionC,
@@ -59,7 +59,7 @@ namespace AssessmentService.Services
                     ? null
                     : dto.CorrectAnswers?.ToUpper(),
 
-                // ✅ Coding
+                //  Coding
                 StarterCode = dto.StarterCode,
 
                 TestCases = dto.TestCases?.Select(tc => new TestCase
@@ -75,7 +75,7 @@ namespace AssessmentService.Services
             return question.Id;
         }
 
-        // ✅ UPDATE
+        // UPDATE
         public async Task<string> UpdateAsync(int id, CreateQuestionDto dto)
         {
             var question = await _repo.GetByIdAsync(id);
@@ -99,7 +99,7 @@ namespace AssessmentService.Services
 
             question.StarterCode = dto.StarterCode;
 
-            // ✅ UPDATE TEST CASES
+            // UPDATE TEST CASES
             question.TestCases = dto.TestCases?.Select(tc => new TestCase
             {
                 Input = tc.Input,
@@ -113,19 +113,19 @@ namespace AssessmentService.Services
             return "Question updated";
         }
 
-        // ✅ GET ALL
+        //  GET ALL
         public async Task<List<Question>> GetAllAsync()
         {
             return await _repo.GetAllAsync();
         }
 
-        // ✅ GET BY ID
+        // GET BY ID
         public async Task<Question?> GetByIdAsync(int id)
         {
             return await _repo.GetByIdAsync(id);
         }
 
-        // ✅ DELETE
+        //  DELETE
         public async Task<string> DeleteAsync(int id)
         {
             var question = await _repo.GetByIdAsync(id);
@@ -138,7 +138,7 @@ namespace AssessmentService.Services
             return "Question deleted";
         }
 
-        // ✅ GET BY ASSESSMENT
+        // GET BY ASSESSMENT
         public async Task<List<Question>> GetByAssessmentAsync(int assessmentId)
         {
             return await _repo.GetByAssessmentAsync(assessmentId);

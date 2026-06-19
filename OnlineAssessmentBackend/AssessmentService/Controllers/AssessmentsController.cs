@@ -18,16 +18,16 @@ namespace AssessmentService.Controllers
         }
 
 
-        // ✅ CREATE (Admin only)
+        //  CREATE (Admin only)
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create(CreateAssessmentDto dto)
         {
             var id = await _service.CreateAsync(dto, User);
-            return Ok(new { assessmentId = id }); // ✅
+            return Ok(new { assessmentId = id }); 
         }
 
-        // ✅ GET ALL (Candidate + Admin)
+        // gET ALL (Candidate + Admin)
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -35,7 +35,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.GetAllAsync());
         }
 
-        // ✅ GET MY ASSESSMENTS (Admin only)
+        //  GET MY ASSESSMENTS (Admin only)
         [Authorize(Roles = "Admin")]
         [HttpGet("my")]
         public async Task<IActionResult> GetMy()
@@ -43,7 +43,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.GetMyAssessmentsAsync(User));
         }
 
-        // ✅ UPDATE (Admin only)
+        //  UPDATE (Admin only)
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UpdateAssessmentDto dto)
@@ -51,7 +51,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.UpdateAsync(id, dto, User));
         }
 
-        // ✅ DELETE (Admin only)
+        //  DELETE (Admin only)
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -59,35 +59,23 @@ namespace AssessmentService.Controllers
             return Ok(await _service.DeleteAsync(id, User));
         }
 
-        //// ✅ GET BY ID (optional, useful)
-        //[Authorize]
-        //[HttpGet("{id}")]
-        //public async Task<IActionResult> GetById(int id)
-        //{
-        //    var assessment = await _service.GetByIdAsync(id);
+        // resultService calls this
+        [AllowAnonymous]
+        [HttpGet("internal/{id}")]
+        public async Task<IActionResult> GetAssessmentInternal(int id)
+        {
+            var assessment = await _service.GetByIdInternalAsync(id);
 
-        //    if (assessment == null)
-        //        return NotFound(new { message = "Assessment not found" });
+            if (assessment == null)
+                return NotFound();
 
-        //    return Ok(assessment);
-        //}
-        //[HttpGet("{id}")]
-        //public async Task<IActionResult> GetById(int id)
-        //{
-        //    try
-        //    {
-        //        var assessment = await _service.GetByIdAsync(id);
+            return Ok(new
+            {
+                title = assessment.AssessmentName
+            });
+        }
 
-        //        if (assessment == null)
-        //            return NotFound("Not found");
 
-        //        return Ok(assessment);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, ex.Message);
-        //    }
-        //}
         [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -104,5 +92,7 @@ namespace AssessmentService.Controllers
             await _service.UpdateStatusAsync(id, dto.Status, User);
             return Ok("Status updated");
         }
+
+
     }
     }

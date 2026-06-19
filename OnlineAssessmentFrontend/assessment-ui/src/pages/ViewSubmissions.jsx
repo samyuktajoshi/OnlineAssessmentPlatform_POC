@@ -245,7 +245,7 @@ function ViewSubmissions() {
                             <Typography color="text.disabled" fontSize={12}>•</Typography>
                             <AccessTimeRoundedIcon sx={{ fontSize: 13, color: "text.disabled" }} />
                             <Typography variant="caption" color="text.secondary">
-                              {new Date(r.createdAt).toLocaleString()}
+                              {new Date(r.createdAt).toLocaleDateString()}
                             </Typography>
                           </Box>
                         </Box>

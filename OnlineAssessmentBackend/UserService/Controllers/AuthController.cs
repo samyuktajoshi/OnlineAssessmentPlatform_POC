@@ -69,4 +69,12 @@ public class AuthController : ControllerBase
     {
         return Ok("Candidate access granted");
     }
+   // [Authorize(Roles = "Admin")]
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var users = await _service.GetAllUsersAsync();
+        return Ok(users);
+    }
+
 }

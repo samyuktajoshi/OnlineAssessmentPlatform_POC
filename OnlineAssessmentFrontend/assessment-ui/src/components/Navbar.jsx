@@ -2,7 +2,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   Box,
   Chip,
   Divider,
@@ -12,7 +11,9 @@ import {
   MenuItem,
   Badge,
   Tooltip,
+  Paper,
 } from "@mui/material";
+
 import { useNavigate } from "react-router-dom";
 import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
@@ -47,24 +48,26 @@ function Navbar() {
   return (
     <AppBar
       position="sticky"
-      elevation={1}
+      elevation={0}
       sx={{
-        background: "linear-gradient(90deg, #0b3c6d, #1e5aa8)",
+        background:
+          "linear-gradient(90deg, rgba(11,60,109,0.95), rgba(16, 55, 107, 0.95))",
+        backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(255,255,255,0.12)",
       }}
     >
       <Toolbar
         sx={{
-          minHeight: 64,
+          minHeight: 70,
+          maxWidth: 1200,
+          width: "100%",
+          mx: "auto",
+          px: 2,
           display: "flex",
           justifyContent: "space-between",
-          maxWidth: "1200px",
-          mx: "auto",
-          width: "100%",
-          px: 2,
         }}
       >
-        {/* Brand */}
+        {/* BRAND */}
         <Box
           onClick={handleLogoClick}
           sx={{
@@ -74,44 +77,69 @@ function Navbar() {
             cursor: "pointer",
           }}
         >
-          <MenuBookRoundedIcon sx={{ color: "#fff", fontSize: 26 }} />
+          <Box
+            sx={{
+              width: 38,
+              height: 38,
+              borderRadius: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.2)",
+            }}
+          >
+            <MenuBookRoundedIcon sx={{ color: "#fff" }} />
+          </Box>
+
           <Typography
             variant="h6"
             sx={{
               color: "#fff",
-              fontWeight: 700,
-              letterSpacing: "0.4px",
+              fontWeight: 800,
+              letterSpacing: "0.5px",
             }}
           >
             Assessment Platform
           </Typography>
         </Box>
 
-        {/* Right Actions */}
+        {/* RIGHT ACTIONS */}
         {user && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            {/* Home */}
+
+            {/* HOME */}
             <Tooltip title="Home">
               <IconButton
                 onClick={handleHomeClick}
                 sx={{
                   color: "#e3f2fd",
-                  "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+                  transition: "0.2s",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                    transform: "translateY(-1px)",
+                  },
                 }}
               >
                 <HomeRoundedIcon />
               </IconButton>
             </Tooltip>
 
-            {/* Notifications */}
+            {/* NOTIFICATIONS */}
             <Tooltip title="Notifications">
               <IconButton
                 sx={{
                   color: "#e3f2fd",
-                  "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" },
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                  },
                 }}
               >
-                <Badge variant="dot" color="error">
+                <Badge
+                  variant="dot"
+                  color="error"
+                  overlap="circular"
+                >
                   <NotificationsNoneRoundedIcon />
                 </Badge>
               </IconButton>
@@ -120,65 +148,74 @@ function Navbar() {
             <Divider
               orientation="vertical"
               flexItem
-              sx={{ borderColor: "rgba(255,255,255,0.25)", mx: 1 }}
+              sx={{ borderColor: "rgba(255,255,255,0.25)" }}
             />
 
-            {/* Role */}
+            {/* USER CHIP */}
             <Chip
               label={user.username}
               size="small"
               sx={{
-                backgroundColor:
-                  user.role?.toLowerCase() === "admin"
-                    ? "rgba(255,255,255,0.28)"
-                    : "rgba(255,255,255,0.18)",
                 color: "#fff",
-                fontWeight: 500,
-                textTransform: "capitalize",
+                fontWeight: 600,
+                background:
+                  user.role?.toLowerCase() === "admin"
+                    ? "rgba(255,255,255,0.25)"
+                    : "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.2)",
               }}
             />
 
-            {/* Avatar + Menu */}
+            {/* AVATAR */}
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
               <Avatar
                 sx={{
-                  width: 36,
-                  height: 36,
-                  bgcolor: "#ffffff22",
+                  width: 38,
+                  height: 38,
+                  bgcolor: "rgba(255,255,255,0.15)",
                   color: "#fff",
-                  fontWeight: 600,
+                  fontWeight: 700,
+                  border: "1px solid rgba(255,255,255,0.2)",
                 }}
               >
                 {user.email?.[0]?.toUpperCase()}
               </Avatar>
             </IconButton>
 
+            {/* MENU */}
             <Menu
               anchorEl={anchorEl}
               open={menuOpen}
               onClose={() => setAnchorEl(null)}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
               PaperProps={{
                 sx: {
                   mt: 1,
-                  minWidth: 200,
-                  borderRadius: 2,
+                  borderRadius: 3,
+                  minWidth: 220,
+                  boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
                 },
               }}
             >
-              <MenuItem disabled sx={{ opacity: 1 }}>
+              <MenuItem disabled>
                 <Box>
-                  <Typography fontSize="0.85rem" fontWeight={600}>
+                  <Typography fontWeight={700}>
                     {user.email}
                   </Typography>
-                  <Typography fontSize="0.75rem" color="text.secondary">
+                  <Typography fontSize={12} color="text.secondary">
                     {user.role}
                   </Typography>
                 </Box>
               </MenuItem>
+
               <Divider />
-              <MenuItem onClick={handleLogout}>
+
+              <MenuItem
+                onClick={handleLogout}
+                sx={{
+                  color: "#d32f2f",
+                  fontWeight: 600,
+                }}
+              >
                 <LogoutRoundedIcon fontSize="small" sx={{ mr: 1 }} />
                 Logout
               </MenuItem>

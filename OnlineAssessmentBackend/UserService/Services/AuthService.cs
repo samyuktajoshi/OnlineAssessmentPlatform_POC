@@ -19,19 +19,19 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    // -------------------- REGISTER --------------------
+    // REGISTER 
     public async Task<string> RegisterAsync(RegisterDto dto)
     {
         _logger.LogInformation("Register attempt for Username: {Username}, Email: {Email}", dto.Username, dto.Email);
 
-        // ✅ Validate password match
+        //  password match
         if (dto.Password != dto.ConfirmPassword)
         {
             _logger.LogWarning("Password mismatch for Username: {Username}", dto.Username);
             throw new BadRequestException("Passwords do not match");
         }
 
-        // ✅ Check username
+        // username
         var existingUser = await _repo.GetByUsernameAsync(dto.Username);
         if (existingUser != null)
         {
@@ -39,7 +39,7 @@ public class AuthService : IAuthService
             throw new BadRequestException("Username already exists");
         }
 
-        // ✅ Check email
+        //  email
         var existingEmail = await _repo.GetByEmailAsync(dto.Email);
         if (existingEmail != null)
         {
@@ -47,7 +47,7 @@ public class AuthService : IAuthService
             throw new BadRequestException("Email Id already exists");
         }
 
-        // ✅ Create user
+        // Create user
         var user = new User
         {
             Username = dto.Username,
@@ -63,7 +63,7 @@ public class AuthService : IAuthService
         return "User registered successfully";
     }
 
-    // -------------------- LOGIN --------------------
+    // LOGIN 
     public async Task<string> LoginAsync(LoginDto dto)
     {
         var identifier = dto.Username.Trim().ToLower();
@@ -91,15 +91,27 @@ public class AuthService : IAuthService
         return token;
     }
 
-    // -------------------- HASH PASSWORD --------------------
+    //  HASH PASSWORD 
     private string HashPassword(string password)
     {
         return BCrypt.Net.BCrypt.HashPassword(password);
     }
 
-    // -------------------- VERIFY PASSWORD --------------------
+    // VERIFY PASSWORD 
     private bool VerifyPassword(string password, string hash)
     {
         return BCrypt.Net.BCrypt.Verify(password, hash);
+    }
+
+    public async Task<List<UserDto>> GetAllUsersAsync()
+    {
+        var users = await _repo.GetAllAsync();
+
+        return users.Select(u => new UserDto
+        {
+            Id = u.Id,
+            Username = u.Username,
+            Email = u.Email
+        }).ToList();
     }
 }

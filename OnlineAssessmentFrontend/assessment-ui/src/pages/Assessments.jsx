@@ -108,7 +108,7 @@ function Assessments() {
     <Box sx={{ backgroundColor: "#f0f2f8", minHeight: "100vh" }}>
 
       {/* Header */}
-      <Box sx={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", px: 4, py: 5, color: "white", mb: 4 }}>
+      <Box sx={{ background: "linear-gradient(135deg,  #1e3c72, #2a5298 100%)", px: 4, py: 5, color: "white", mb: 4 }}>
         <Box maxWidth={900} mx="auto">
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ width: 52, height: 52, borderRadius: 2, bgcolor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -167,7 +167,7 @@ function Assessments() {
                 "&.Mui-selected": {
                   background: "linear-gradient(135deg, #1e3c72, #2a5298)",
                   color: "white",
-                  "&:hover": { background: "linear-gradient(135deg, #1e3c72, #2a5298)" },
+                  "&:hover": { background: "linear-gradient(135deg, #040609, #03070e)" },
                 },
               },
             }}
@@ -301,8 +301,8 @@ function Assessments() {
                     </Stack>
 
                     <Stack direction="row" spacing={1} alignItems="center" ml={0.5}>
-                      <AccessTimeRoundedIcon fontSize="small" sx={{ color: isClosed ? "text.disabled" : "#1e3c72" }} />
-                      <Typography variant="body2" fontWeight={500} color={isClosed ? "text.disabled" : "#1e3c72"}>
+                      <AccessTimeRoundedIcon fontSize="small" sx={{ color: isClosed ? "text.disabled" : "#03060b" }} />
+                      <Typography variant="body2" fontWeight={500} color={isClosed ? "text.disabled" : "#03060c"}>
                         {a.durationMinutes ?? a.duration} mins
                       </Typography>
                     </Stack>
@@ -328,7 +328,7 @@ function Assessments() {
                         <Typography variant="body2" color="text.secondary">
                           Attempts: {attempts}
                         </Typography>
-                        <Typography variant="body2" fontWeight={700} color="#0d447c">
+                        <Typography variant="body2" fontWeight={700} color="#06101a">
                           Best Score: {bestScore}/{totalQuestions}
                         </Typography>
                       </Box>
@@ -349,7 +349,7 @@ function Assessments() {
                       sx={{
                         background: isClosed
                           ? "#94a3b8"
-                          : "linear-gradient(135deg, #1e3c72, #2a5298)",
+                          : "linear-gradient(135deg,  #1e3c72, #2a5298)",
                         borderRadius: 2,
                         px: 3,
                         textTransform: "none",

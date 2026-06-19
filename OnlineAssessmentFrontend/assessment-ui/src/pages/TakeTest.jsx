@@ -73,22 +73,28 @@ function TakeTest() {
       const payload = {
         assessmentId: parseInt(id),
         answers: questions.map((q) => {
-          if (q.type === 4) {
-            const tr = testResults[q.id];
-            const allPassed = tr && tr.passed === tr.total && tr.total > 0;
-            return {
-              questionId: q.id,
-              // Send the actual code written by candidate
-              selectedAnswers: answers[q.id] || q.starterCode || "",
-              isCorrect: allPassed,
-            };
-          }
+         if (q.type === 4) {
+  const tr = testResults[q.id];
+  const allPassed = tr && tr.passed === tr.total && tr.total > 0;
+
+  return {
+    questionId: q.id,
+
+    // ✅ FIX: send CODE here
+    code: answers[q.id] || q.starterCode || "",
+
+    // ✅ keep for now (backend uses it for result display)
+    isCorrect: allPassed,
+  };
+}
           return {
             questionId: q.id,
             selectedAnswers: answers[q.id] || "",
           };
         }),
+        
       };
+console.log(payload)
 
       const subRes = await submissionApi.post("/submissions", payload);
       const submissionId = subRes.data.submissionId;
@@ -562,7 +568,7 @@ function TakeTest() {
 
           <Button
             fullWidth variant="contained" size="large"
-            disabled={submitting || answeredCount === 0}
+            disabled={submitting }
             onClick={handleSubmit}
             sx={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)", borderRadius: 2, py: 1.5, fontSize: 16, fontWeight: 700, textTransform: "none" }}
           >

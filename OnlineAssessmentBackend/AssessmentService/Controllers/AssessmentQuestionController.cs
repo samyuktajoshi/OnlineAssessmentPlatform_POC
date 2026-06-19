@@ -16,7 +16,7 @@ namespace AssessmentService.Controllers
             _service = service;
         }
 
-        // ✅ ADD QUESTION
+        //  ADD QUESTION
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Add(AddQuestionToAssessmentDto dto)
@@ -24,7 +24,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.AddQuestionAsync(dto));
         }
 
-        // ✅ GET QUESTIONS (Admin view)
+        //  GET QUESTIONS (Admin view)
         [Authorize(Roles = "Admin")]
         [HttpGet("{assessmentId}")]
         public async Task<IActionResult> Get(int assessmentId)
@@ -32,7 +32,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.GetQuestionsByAssessmentAsync(assessmentId));
         }
 
-        // ✅ REMOVE QUESTION
+        //  REMOVE QUESTION
         [Authorize(Roles = "Admin")]
         [HttpDelete]
         public async Task<IActionResult> Remove(AddQuestionToAssessmentDto dto)

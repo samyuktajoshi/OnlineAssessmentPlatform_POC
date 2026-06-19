@@ -20,7 +20,6 @@ namespace SubmissionService.Repositories
             await _context.SaveChangesAsync();
         }
 
-        // ✅ ADD THIS (VERY IMPORTANT)
         public async Task<Submission?> GetByIdAsync(int id)
         {
             return await _context.Submissions

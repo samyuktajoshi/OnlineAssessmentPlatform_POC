@@ -135,7 +135,7 @@ function MyResults() {
     <Box sx={{ backgroundColor: "#f0f2f8", minHeight: "100vh" }}>
 
       {/* Header */}
-      <Box sx={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)", px: 4, py: 2, color: "white", mb: 4 }}>
+      <Box sx={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)", px: 2, py: 1, color: "white", mb: 3 }}>
         <Box maxWidth={900} mx="auto">
           <Button
             startIcon={<ArrowBackRoundedIcon />}

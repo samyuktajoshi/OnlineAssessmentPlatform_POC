@@ -16,16 +16,22 @@ namespace AssessmentService.Controllers
             _service = service;
         }
 
-        // ✅ CREATE
+        //  CREATE
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create(CreateQuestionDto dto)
         {
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState); 
+            }
+
             var id = await _service.CreateAsync(dto);
             return Ok(new { id = id });
         }
 
-        // ✅ GET ALL
+        // GET ALL
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -33,7 +39,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.GetAllAsync());
         }
 
-        // ✅ GET BY ID
+        // GET BY ID
         [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -46,7 +52,7 @@ namespace AssessmentService.Controllers
             return Ok(q);
         }
 
-        // ✅ UPDATE
+        // UPDATE
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, CreateQuestionDto dto)
@@ -54,7 +60,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.UpdateAsync(id, dto));
         }
 
-        // ✅ DELETE
+        //  DELETE
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -62,8 +68,7 @@ namespace AssessmentService.Controllers
             return Ok(await _service.DeleteAsync(id));
         }
 
-        // ✅ IMPORTANT (USED BY RESULT SERVICE)
-        // ❌ NO AUTHORIZE → so microservice call works
+        // USED BY RESULT SERVICE
         [HttpGet("assessment/{assessmentId}")]
         public async Task<IActionResult> GetByAssessment(int assessmentId)
         {

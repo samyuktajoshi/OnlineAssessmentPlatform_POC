@@ -6,6 +6,8 @@
         public string SelectedAnswers { get; set; }
 
         public bool? IsCorrect { get; set; }
+        public string? Code { get; set; }            // ✅ NEW FIELD
+
 
     }
 }

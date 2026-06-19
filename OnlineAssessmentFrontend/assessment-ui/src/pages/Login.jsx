@@ -71,7 +71,7 @@ function Login() {
           flexDirection: "column",
           justifyContent: "center",
           px: 7,
-          background: "linear-gradient(160deg, #0d447c 0%, #1e5aa8 60%, #2a6fc4 100%)",
+          background: "linear-gradient(160deg, #1454a7 0%, #1e5aa8 60%, #2a6fc4 100%)",
           color: "white",
           position: "relative",
           overflow: "hidden",
@@ -87,7 +87,7 @@ function Login() {
             <MenuBookRoundedIcon sx={{ fontSize: 22, color: "white" }} />
           </Box>
           <Typography fontWeight={700} fontSize={18} letterSpacing={0.3}>
-            Assessment Platform
+            Online Assessment Platform
           </Typography>
         </Box>
 
@@ -130,7 +130,7 @@ function Login() {
       >
         {/* Mobile logo */}
         <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, mb: 4 }}>
-          <MenuBookRoundedIcon sx={{ color: "#0d447c", fontSize: 28 }} />
+          <MenuBookRoundedIcon sx={{ color: "#083f75", fontSize: 28 }} />
           <Typography fontWeight={700} fontSize={18} color="#0d447c">
             Assessment Platform
           </Typography>

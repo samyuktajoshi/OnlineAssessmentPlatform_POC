@@ -25,7 +25,7 @@ namespace AssessmentService.Services
                 var body = new
                 {
                     source_code = code,
-                    language_id = 71,  // ✅ Python
+                    language_id = 71,  // Python
                     stdin = input
                 };
 
@@ -46,15 +46,15 @@ namespace AssessmentService.Services
 
                 using var doc = JsonDocument.Parse(json);
 
-                // ✅ SUCCESS OUTPUT
+                // SUCCESS OUTPUT
                 if (doc.RootElement.TryGetProperty("stdout", out var stdout))
                 {
                     var output = stdout.GetString();
                     _logger.LogInformation("Code executed successfully. Output: {Output}", output);
-                    return output;
+                    return output?.Trim();
                 }
 
-                // ❌ RUNTIME ERROR
+                //  RUNTIME ERROR
                 if (doc.RootElement.TryGetProperty("stderr", out var err))
                 {
                     var error = err.GetString();
@@ -62,7 +62,7 @@ namespace AssessmentService.Services
                     return error;
                 }
 
-                // ❌ COMPILATION ERROR
+                //  COMPILATION ERROR
                 if (doc.RootElement.TryGetProperty("compile_output", out var comp))
                 {
                     var error = comp.GetString();
@@ -70,7 +70,7 @@ namespace AssessmentService.Services
                     return error;
                 }
 
-                // ❗ NO OUTPUT CASE
+                //  NO OUTPUT CASE
                 _logger.LogWarning("Execution finished but no output returned");
 
                 return "No output";

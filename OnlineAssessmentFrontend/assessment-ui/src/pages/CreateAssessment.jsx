@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import assessmentApi from "../api/assessmentApi";
 import { useNavigate } from "react-router-dom";
-
 import {
   TextField,
   Button,
@@ -108,7 +107,7 @@ function CreateAssessment() {
   };
 
   return (
-    <Box minHeight="100vh" bgcolor="#f4f6fa" px={{ xs: 2, md: 6 }} py={4}>
+    <Box minHeight="80vh" bgcolor="#f4f6fa" px={{ xs: 2, md: 6 }} py={4}>
       {/* HEADER */}
       <Box maxWidth={900} mx="auto" mb={4}>
         <Typography variant="h4" fontWeight={700}>

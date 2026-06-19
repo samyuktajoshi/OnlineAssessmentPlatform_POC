@@ -16,14 +16,14 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-// -------------------- DATABASE --------------------
+//  DATABASE 
 builder.Services.AddDbContext<AssessmentDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
 
-// -------------------- CORS (IMPORTANT) --------------------
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
@@ -36,7 +36,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-// -------------------- JWT AUTH --------------------
+// JWT AUTH 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -52,8 +52,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidateLifetime = true,
 
-            ValidIssuer = jwt["Issuer"],       // MUST match UserService
-            ValidAudience = jwt["Audience"],   // MUST match UserService
+            ValidIssuer = jwt["Issuer"],       
+            ValidAudience = jwt["Audience"],   
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(key))
         };
@@ -61,7 +61,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddHttpClient<CodeExecutionService>();
-// -------------------- DEPENDENCY INJECTION --------------------
+// DEPENDENCY INJECTION 
 builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAssessmentQuestionRepository, AssessmentQuestionRepository>();
@@ -70,16 +70,16 @@ builder.Services.AddScoped<IAssessmentService, AssessmentService.Services.Assess
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IAssessmentQuestionService, AssessmentQuestionService>();
 
-// -------------------- CONTROLLERS --------------------
+//  CONTROLLERS 
 builder.Services.AddControllers();
 
-// -------------------- SWAGGER --------------------
+//  SWAGGER 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new() { Title = "Assessment API", Version = "v1" });
 
-    // ✅ JWT AUTH CONFIG
+    //  JWT AUTH CONFIG
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -106,7 +106,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// -------------------- APP --------------------
+// APP 
 var app = builder.Build();
 
 // Swagger
@@ -116,11 +116,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// -------------------- MIDDLEWARE ORDER (VERY IMPORTANT) --------------------
+//  MIDDLEWARE 
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowFrontend");   // ✅ must be BEFORE auth
+app.UseCors("AllowFrontend");   
 
 app.UseMiddleware<ExceptionMiddleware>(); // custom exception handling
 

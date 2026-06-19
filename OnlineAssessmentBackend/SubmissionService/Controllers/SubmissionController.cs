@@ -16,7 +16,7 @@ namespace SubmissionService.Controllers
             _service = service;
         }
 
-        // ✅ SUBMIT TEST
+        // SUBMIT TEST
         [Authorize(Roles = "Candidate")]
         [HttpPost]
         public async Task<IActionResult> Submit(SubmitTestDto dto)
@@ -25,7 +25,6 @@ namespace SubmissionService.Controllers
             return Ok(new { submissionId = id });
         }
 
-        // 🚨 VERY IMPORTANT (FOR RESULT SERVICE)
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

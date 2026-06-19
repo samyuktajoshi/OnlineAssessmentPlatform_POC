@@ -15,7 +15,7 @@ public class JwtHelper
 
     public string GenerateToken(User user)
     {
-        // ✅ 1. Claims (what info goes inside token)
+        // Claims (what info goes inside token)
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -23,7 +23,7 @@ public class JwtHelper
             new Claim(ClaimTypes.Role, user.Role)
         };
 
-        // ✅ 2. Read JWT settings from config (fail‑fast)
+        // Read JWT settings from config (fail‑fast)
         var key = _config["Jwt:Key"]
             ?? throw new InvalidOperationException("JWT Key is missing");
 
@@ -38,7 +38,7 @@ public class JwtHelper
                 ?? throw new InvalidOperationException("JWT ExpiryMinutes is missing")
         );
 
-        // ✅ 3. Create signing credentials
+        //  Create signing credentials
         var securityKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(key)
         );
@@ -48,7 +48,7 @@ public class JwtHelper
             SecurityAlgorithms.HmacSha256
         );
 
-        // ✅ 4. Create token
+        //  Create token
         var token = new JwtSecurityToken(
             issuer: issuer,
             audience: audience,
@@ -57,7 +57,7 @@ public class JwtHelper
             signingCredentials: credentials
         );
 
-        // ✅ 5. Return JWT string
+        //Return JWT string
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

@@ -21,7 +21,7 @@ namespace SubmissionService.Services
             _logger = logger;
         }
 
-        // ✅ SUBMIT TEST
+        // sUBMIT TEST
         public async Task<int> SubmitAsync(SubmitTestDto dto, ClaimsPrincipal user)
         {
             _logger.LogInformation("Submission request received for Assessment {AssessmentId}", dto.AssessmentId);
@@ -45,13 +45,14 @@ namespace SubmissionService.Services
             _logger.LogInformation("User {UserId} submitting test with {Count} answers",
                 userId, dto.Answers.Count);
 
-            // ✅ LOG EACH ANSWER (VERY IMPORTANT)
+            // LOG EACH ANSWER
             foreach (var a in dto.Answers)
             {
                 _logger.LogInformation(
-                    "Answer → QID: {Qid}, Selected: {Selected}, IsCorrect: {Correct}",
+                    "Answer → QID: {Qid}, Selected: {Selected}, CodeLength: {CodeLen}, IsCorrect: {Correct}",
                     a.QuestionId,
                     a.SelectedAnswers,
+                    a.Code?.Length ?? 0,
                     a.IsCorrect
                 );
             }
@@ -60,14 +61,24 @@ namespace SubmissionService.Services
             {
                 UserId = userId,
                 AssessmentId = dto.AssessmentId,
-                StartTime = DateTime.UtcNow,
-                EndTime = DateTime.UtcNow,
+
+               
+                StartTime = DateTime.Now,
+                EndTime = DateTime.Now,
 
                 Answers = dto.Answers.Select(a => new SubmissionAnswer
                 {
                     QuestionId = a.QuestionId,
+
+                    //MCQ answers
                     SelectedAnswers = a.SelectedAnswers,
+
+                    //  Coding answers 
+                    Code = a.Code,
+
+                    // ✅ keep for now
                     IsCorrect = a.IsCorrect
+
                 }).ToList()
             };
 
@@ -81,7 +92,7 @@ namespace SubmissionService.Services
             return submission.Id;
         }
 
-        // ✅ GET SUBMISSION BY ID
+        // gET SUBMISSION BY ID
         public async Task<SubmissionDto?> GetByIdAsync(int id)
         {
             _logger.LogInformation("Fetching submission {SubmissionId}", id);
@@ -104,10 +115,12 @@ namespace SubmissionService.Services
                 SubmissionId = sub.Id,
                 AssessmentId = sub.AssessmentId,
 
+               
                 Answers = sub.Answers.Select(a => new SubmissionAnswerDto
                 {
                     QuestionId = a.QuestionId,
                     SelectedAnswers = a.SelectedAnswers,
+                    Code = a.Code,
                     IsCorrect = a.IsCorrect
                 }).ToList()
             };

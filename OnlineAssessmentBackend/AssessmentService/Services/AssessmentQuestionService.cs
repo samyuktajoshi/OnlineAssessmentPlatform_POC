@@ -19,7 +19,7 @@ namespace AssessmentService.Services
             _logger = logger;
         }
 
-        // ✅ ADD QUESTION TO ASSESSMENT
+        // ADD QUESTION TO ASSESSMENT
         public async Task<string> AddQuestionAsync(AddQuestionToAssessmentDto dto)
         {
             _logger.LogInformation(
@@ -45,7 +45,7 @@ namespace AssessmentService.Services
             return "Question added to assessment";
         }
 
-        // ✅ REMOVE QUESTION FROM ASSESSMENT
+        // REMOVE QUESTION FROM ASSESSMENT
         public async Task<string> RemoveQuestionAsync(int assessmentId, int questionId)
         {
             var mapping = await _repo.GetAsync(assessmentId, questionId);
@@ -58,7 +58,7 @@ namespace AssessmentService.Services
             return "Question removed";
         }
 
-        // ✅ GET QUESTIONS (ADMIN VIEW)
+        // GET QUESTIONS (ADMIN VIEW)
         public async Task<List<Question>> GetQuestionsByAssessmentAsync(int assessmentId)
         {
             var mappings = await _repo.GetByAssessmentIdAsync(assessmentId);
@@ -66,7 +66,7 @@ namespace AssessmentService.Services
             return mappings.Select(x => x.Question).ToList();
         }
 
-        // ✅ GET QUESTIONS FOR CANDIDATE (UPDATED ✅)
+        //  GET QUESTIONS FOR CANDIDATE 
         public async Task<List<QuestionForCandidateDto>> GetQuestionsForCandidateAsync(int assessmentId)
         {
             _logger.LogInformation(
@@ -76,23 +76,23 @@ namespace AssessmentService.Services
             var mappings = await _repo.GetByAssessmentIdAsync(assessmentId);
 
             var result = mappings
-                .Where(x => x.Question != null) // ✅ prevent null crash
+                .Where(x => x.Question != null) 
                 .Select(x => new QuestionForCandidateDto
                 {
                     Id = x.Question.Id,
                     Text = x.Question.Text,
                     Type = (int)x.Question.Type,
 
-                    // ✅ MCQ fields
+                    //  MCQ fields
                     OptionA = x.Question.OptionA,
                     OptionB = x.Question.OptionB,
                     OptionC = x.Question.OptionC,
                     OptionD = x.Question.OptionD,
 
-                    // ✅ Coding fields
+                    // Coding fields
                     StarterCode = x.Question.StarterCode,
 
-                    // ✅ MULTIPLE TEST CASES (SAFE ✅)
+                    //  MULTIPLE TEST CASES
                     TestCases = x.Question.TestCases?
                         .Where(tc => !tc.IsHidden)
                         .Select(tc => new TestCaseDto

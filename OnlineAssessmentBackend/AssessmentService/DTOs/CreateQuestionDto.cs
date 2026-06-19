@@ -18,7 +18,6 @@
         public string? StarterCode { get; set; }
         //public string? Input { get; set; }
         //public string? ExpectedOutput { get; set; }
-        public List<TestCaseDto> TestCases { get; set; }
-
+        public List<TestCaseDto>? TestCases { get; set; }
     }
 }

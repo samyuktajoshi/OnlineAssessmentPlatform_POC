@@ -104,27 +104,27 @@ function Register() {
           display: { xs: "none", md: "flex" },
           flexDirection: "column",
           justifyContent: "center",
-          px: 5,
-          background: "linear-gradient(160deg, #0d447c 0%, #1e5aa8 60%, #2a6fc4 100%)",
+          px: 7,
+          background: "linear-gradient(160deg, #1454a7 0%, #1e5aa8 60%, #2a6fc4 100%)",
           color: "white",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        <Box sx={{ position: "absolute", top: -80, right: -80, width: 280, height: 280, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.05)" }} />
-        <Box sx={{ position: "absolute", bottom: -60, left: -60, width: 220, height: 220, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.05)" }} />
+        <Box sx={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.05)" }} />
+        <Box sx={{ position: "absolute", bottom: -60, left: -60, width: 250, height: 250, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.05)" }} />
 
         {/* Logo */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 4 }}>
-          <Box sx={{ width: 38, height: 38, borderRadius: 2, bgcolor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.2)" }}>
-            <MenuBookRoundedIcon sx={{ fontSize: 20, color: "white" }} />
+          <Box sx={{ width: 42, height: 42, borderRadius: 2, bgcolor: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.2)" }}>
+            <MenuBookRoundedIcon sx={{ fontSize: 40, color: "white" }} />
           </Box>
-          <Typography fontWeight={700} fontSize={16} letterSpacing={0.3}>
-            Assessment Platform
+          <Typography fontWeight={700} fontSize={30} letterSpacing={0.3}>
+            Online Assessment Platform
           </Typography>
         </Box>
 
-        <Typography variant="h4" fontWeight={800} lineHeight={1.2} mb={1.5}>
+        <Typography variant="h4" fontWeight={1000} lineHeight={1.2} mb={1.5}>
           Join the Platform
         </Typography>
 
@@ -134,7 +134,7 @@ function Register() {
           Create your account to take assessments, track progress, and manage evaluations.
         </Typography>
 
-        <Stack spacing={1.5}>
+        <Stack spacing={2}>
           {[
             "Take timed assessments with auto-submit",
             "View detailed results with correct answers",

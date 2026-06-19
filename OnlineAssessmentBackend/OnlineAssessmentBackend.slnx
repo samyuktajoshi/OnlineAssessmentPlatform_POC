@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="AssessmentService/AssessmentService.csproj" Id="57719b28-500e-494d-b373-40ae234ec83a" />
+  <Project Path="ChatBotService/ChatBotService.csproj" Id="7bc969f7-f3be-4022-8edc-81fa72f5a027" />
   <Project Path="ResultService/ResultService.csproj" Id="cab6d4cf-af5d-4fe0-92f2-cd6a7a5d6e6d" />
   <Project Path="SubmissionService/SubmissionService.csproj" Id="06ef9919-92f1-4f27-b10b-ce959da9389d" />
   <Project Path="UserService/UserService.csproj" />

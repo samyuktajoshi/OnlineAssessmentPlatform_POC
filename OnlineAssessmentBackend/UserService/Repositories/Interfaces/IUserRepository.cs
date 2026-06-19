@@ -8,6 +8,7 @@ namespace UserService.Repositories.Interfaces
         Task AddUserAsync(User user);
         Task<User> GetByEmailAsync(string email);
         Task<User?> GetByUsernameOrEmailAsync(string value);
+        Task<List<User>> GetAllAsync();
 
     }
 }

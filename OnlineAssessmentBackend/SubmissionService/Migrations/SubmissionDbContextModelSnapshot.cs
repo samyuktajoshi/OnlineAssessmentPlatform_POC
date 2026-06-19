@@ -55,6 +55,9 @@ namespace SubmissionService.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Code")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool?>("IsCorrect")
                         .HasColumnType("bit");
 
@@ -62,7 +65,6 @@ namespace SubmissionService.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("SelectedAnswers")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SubmissionId")

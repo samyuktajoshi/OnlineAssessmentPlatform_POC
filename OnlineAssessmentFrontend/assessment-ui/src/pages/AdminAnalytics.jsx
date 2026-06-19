@@ -129,8 +129,8 @@ function AdminAnalytics() {
       <Box
         sx={{
           background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
-          px: 4,
-          py: 5,
+          px: 2,
+          py: 3,
           color: "white",
           mb: 4,
         }}
